@@ -25,6 +25,8 @@ body{
   perspective:1900px;touch-action:none;cursor:grab;
 }
 #stage.dragging{cursor:grabbing}
+#stage.panning{cursor:move}                 /* zoomed in: drag moves the page */
+#stage.panning.dragging{cursor:grabbing}
 #shade{position:absolute;width:560px;height:120px;border-radius:50%;background:#000;
   filter:blur(46px);opacity:.5;pointer-events:none}
 
@@ -47,7 +49,8 @@ body{
   background-image:radial-gradient(rgba(31,36,48,.028) .5px,transparent .6px);
   background-size:3px 3px;mix-blend-mode:multiply}
 .back{transform:rotateY(180deg)}
-.body{height:100%;overflow:hidden}
+.body{height:100%}
+.face.measuring .body{overflow:hidden}   /* clipping is for the fit loop only */
 
 /* ---------- type ---------- */
 h1{font-size:3.25em;line-height:1.02;font-weight:600;margin:0 0 .12em;letter-spacing:-.015em}
@@ -107,6 +110,8 @@ a.link:hover{color:var(--accent);border-color:var(--accent)}
 [data-tip]:hover::after,[data-tip]:focus-visible::after,[data-tip].tip-on::after{opacity:1;transform:translateZ(58px) translateY(0)}
 [data-tip]:hover::before,[data-tip]:focus-visible::before,[data-tip].tip-on::before{opacity:1;transform:translateZ(58px) translateY(0) rotate(45deg)}
 [data-tip]:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+[data-tip].tip-flip::after{left:auto;right:0}
+[data-tip].tip-flip::before{left:auto;right:19px}
 .term{border-bottom:1px dotted var(--accent);cursor:help}
 .entry[data-tip]::after{left:auto;right:0}
 .entry[data-tip]::before{left:auto;right:22px}

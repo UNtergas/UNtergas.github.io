@@ -8,7 +8,7 @@
   const hint  = document.getElementById('hint');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const st = { rx:-7, ry:-4, zoom:1, flip:0, vx:0, vy:0, drag:false };
+  const st = { rx:-7, ry:-4, zoom:1, flip:0, vx:0, vy:0, px:0, py:0, drag:false };
   let base = 1, touched = false;
   const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
 
@@ -18,25 +18,46 @@
     base = Math.max(0.2, Math.min(w * 0.9 / 720, h * 0.94 / 1018));
   }
 
+  /* how far the sheet may slide before it leaves the stage */
+  function panLimits(){
+    const k = base * st.zoom;
+    return {
+      x: Math.max(0, (720 * k - stage.clientWidth) / 2 + 60),
+      y: Math.max(0, (1018 * k - stage.clientHeight) / 2 + 60)
+    };
+  }
+  function clampPan(){
+    const l = panLimits();
+    st.px = clamp(st.px, -l.x, l.x);
+    st.py = clamp(st.py, -l.y, l.y);
+  }
+
   function render(){
     const k = base * st.zoom, ry = st.ry + st.flip;
     root.style.setProperty('--k', k);
-    sheet.style.transform = `rotateX(${st.rx}deg) rotateY(${ry}deg)`;
+    clampPan();
+    stage.classList.toggle('panning', st.zoom > 1.02);
+    sheet.style.transform =
+      `translate3d(${st.px}px, ${st.py}px, 0) rotateX(${st.rx}deg) rotateY(${ry}deg)`;
     const facing = Math.abs(Math.cos(ry * Math.PI / 180));
-    shade.style.transform = `translateY(${300*k}px) scaleX(${(0.25+0.75*facing)*k}) scaleY(${k})`;
+    shade.style.transform = `translate(${st.px}px, ${st.py + 300*k}px) scaleX(${(0.25+0.75*facing)*k}) scaleY(${k})`;
     shade.style.opacity = 0.22 + 0.33 * facing;
   }
 
-  /* shrink the type until the page fits inside its margins */
+  /* shrink the type until the page fits inside its margins.
+     .measuring turns on overflow:hidden just for the measurement — the rest of
+     the time the box must stay unclipped or it cuts the tooltips off. */
   function fitText(){
     sheet.querySelectorAll('.face').forEach(face => {
       const body = face.querySelector('.body');
       let size = 16;
+      face.classList.add('measuring');
       face.style.setProperty('--fs', size + 'px');
       while (body.scrollHeight > body.clientHeight - 2 && size > 10.5) {
         size -= 0.25;
         face.style.setProperty('--fs', size + 'px');
       }
+      face.classList.remove('measuring');
     });
   }
 
@@ -76,14 +97,23 @@
   stage.addEventListener('pointermove', e => {
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, e);
-    if (pts.size === 2) { setZoom(zoom0 * dist() / pinch0); return; }
+    if (pts.size === 2) {
+      const [a, b] = [...pts.values()];
+      setZoom(zoom0 * dist() / pinch0, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+      return;
+    }
     if (!st.drag || !last) return;
     moved = Math.hypot(e.clientX - downX, e.clientY - downY);
     if (moved > 5 && !captured) { stage.setPointerCapture(e.pointerId); captured = true; }
     if (!captured) return;
-    st.vx = (e.clientX - last.clientX) * 0.32;
-    st.vy = (e.clientY - last.clientY) * 0.22;
-    st.ry += st.vx; st.rx = clamp(st.rx - st.vy, -72, 72);
+    const dx = e.clientX - last.clientX, dy = e.clientY - last.clientY;
+    if (st.zoom > 1.02 && !e.shiftKey) {        // zoomed in: you are reading, so pan
+      st.px += dx; st.py += dy;
+      st.vx = st.vy = 0;
+    } else {                                     // fitted, or Shift held: turn the page
+      st.vx = dx * 0.32; st.vy = dy * 0.22;
+      st.ry += st.vx; st.rx = clamp(st.rx - st.vy, -72, 72);
+    }
     last = e; render();
   });
 
@@ -107,16 +137,27 @@
     })();
   }
 
-  /* zoom is a layout change, so coalesce it to one per frame */
+  /* zoom is a layout change, so coalesce it to one per frame.
+     anchor: keep whatever is under (cx, cy) roughly under it after the zoom */
   let pending = null;
-  function setZoom(z){
-    st.zoom = clamp(z, 1, 3.2);              /* 1 = fitted; never smaller */
+  function setZoom(z, cx, cy){
+    const prev = st.zoom;
+    st.zoom = clamp(z, 1, 3.2);                /* 1 = fitted; never smaller */
+    const f = st.zoom / prev;
+    if (cx !== undefined && f !== 1) {
+      const r = stage.getBoundingClientRect();
+      const ox = cx - (r.left + r.width / 2);
+      const oy = cy - (r.top + r.height / 2);
+      st.px = ox - (ox - st.px) * f;
+      st.py = oy - (oy - st.py) * f;
+    }
+    if (st.zoom === 1) { st.px = st.py = 0; }  /* back to fit: recentre */
     if (pending) return;
     pending = requestAnimationFrame(() => { pending = null; render(); });
   }
   stage.addEventListener('wheel', e => {
     e.preventDefault();
-    setZoom(st.zoom * (e.deltaY > 0 ? 0.9 : 1.11));
+    setZoom(st.zoom * (e.deltaY > 0 ? 0.9 : 1.11), e.clientX, e.clientY);
     hint.classList.add('gone');
   }, { passive:false });
 
@@ -132,15 +173,17 @@
 
   /* lay flat = face on, zoomed back out to fit */
   function layFlat(){
-    const f = { rx:st.rx, ry:st.ry, z:st.zoom }, t0 = performance.now();
+    const f = { rx:st.rx, ry:st.ry, z:st.zoom, px:st.px, py:st.py }, t0 = performance.now();
     const targetRy = Math.round((st.ry + st.flip) / 180) * 180 - st.flip;
-    if (reduce) { st.rx = 0; st.ry = targetRy; st.zoom = 1; st.vx = st.vy = 0; render(); return; }
+    if (reduce) { st.rx = 0; st.ry = targetRy; st.zoom = 1; st.px = st.py = 0; st.vx = st.vy = 0; render(); return; }
     st.vx = st.vy = 0;
     (function anim(now){
       const k = Math.min(1, (now - t0) / 480), e = 1 - Math.pow(1 - k, 3);
       st.rx = f.rx + (0 - f.rx) * e;
       st.ry = f.ry + (targetRy - f.ry) * e;
       st.zoom = f.z + (1 - f.z) * e;
+      st.px = f.px * (1 - e);
+      st.py = f.py * (1 - e);
       render();
       if (k < 1) requestAnimationFrame(anim);
     })(t0);
@@ -150,22 +193,39 @@
   document.getElementById('reset').onclick = layFlat;
   stage.addEventListener('dblclick', flip);
 
+  /* a tooltip near the right edge of the window anchors from the right instead,
+     so it can never be pushed off screen once the paper stops clipping it */
+  const TIP_W = 300;
+  stage.addEventListener('pointerover', e => {
+    const t = e.target.closest && e.target.closest('[data-tip]');
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    t.classList.toggle('tip-flip', r.left + TIP_W > innerWidth - 12);
+  });
+
   const coarse = matchMedia('(hover: none)').matches;
   stage.addEventListener('click', e => {
     if (moved > 5) { e.preventDefault(); return; }
     if (!coarse) return;
     const t = e.target.closest('[data-tip]');
     document.querySelectorAll('.tip-on').forEach(n => { if (n !== t) n.classList.remove('tip-on'); });
-    if (t) { e.preventDefault(); t.classList.toggle('tip-on'); }
+    if (t) {
+      e.preventDefault();
+      const r = t.getBoundingClientRect();
+      t.classList.toggle('tip-flip', r.left + TIP_W > innerWidth - 12);
+      t.classList.toggle('tip-on');
+    }
   });
 
   addEventListener('keydown', e => {
     if (e.target.closest('a')) return;
     const k = e.key;
-    if (k === 'ArrowLeft')  { st.ry -= 8; render(); }
-    if (k === 'ArrowRight') { st.ry += 8; render(); }
-    if (k === 'ArrowUp')    { st.rx = clamp(st.rx - 6, -72, 72); render(); }
-    if (k === 'ArrowDown')  { st.rx = clamp(st.rx + 6, -72, 72); render(); }
+    const panning = st.zoom > 1.02 && !e.shiftKey;   /* Shift forces rotation */
+    const STEP = 60;
+    if (k === 'ArrowLeft')  { if (panning) st.px += STEP; else st.ry -= 8; render(); }
+    if (k === 'ArrowRight') { if (panning) st.px -= STEP; else st.ry += 8; render(); }
+    if (k === 'ArrowUp')    { if (panning) st.py += STEP; else st.rx = clamp(st.rx - 6, -72, 72); render(); }
+    if (k === 'ArrowDown')  { if (panning) st.py -= STEP; else st.rx = clamp(st.rx + 6, -72, 72); render(); }
     if (k === '+' || k === '=') setZoom(st.zoom * 1.15);
     if (k === '-') setZoom(st.zoom / 1.15);
     if (k === 'f' || k === 'F' || k === ' ') { e.preventDefault(); flip(); }

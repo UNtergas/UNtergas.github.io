@@ -1,0 +1,9 @@
+{
+  "name": "cv-sheet",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "dev": "node src/build.mjs --watch"
+  }
+}

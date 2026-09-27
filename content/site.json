@@ -1,0 +1,36 @@
+{
+  "title": "Nguyen Anh Tuan — Full-stack engineer",
+  "description": "A CV you can spin. TypeScript, Node, React. Paris.",
+  "ogImage": "https://UNtergas.github.io/og.png",
+  "contact": [
+    {
+      "text": "Paris, France",
+      "tip": "On site in Paris, or remote across Europe."
+    },
+    {
+      "text": "nguyenanhtuan200241@gmail.com",
+      "href": "mailto:nguyenanhtuan200241@gmail.com",
+      "tip": "Fastest way to reach me."
+    },
+    {
+      "text": "+33 6 69 08 83 59",
+      "href": "tel:+33669088359"
+    },
+    {
+      "text": "linkedin.com/in/tubanguyen",
+      "href": "https://linkedin.com/in/tubanguyen"
+    }
+  ],
+  "downloads": [
+    {
+      "label": "CV — English (PDF)",
+      "file": "cv-en.pdf",
+      "tip": "The printable one-pager."
+    },
+    {
+      "label": "CV — Français (PDF)",
+      "file": "cv-fr.pdf",
+      "tip": "La version française."
+    }
+  ]
+}

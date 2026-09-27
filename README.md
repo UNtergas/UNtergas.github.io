@@ -1,4 +1,5 @@
 # CV as a sheet of paper
+![alt text](image.png)
 
 A one-page site: an A4 sheet floating in 3D that you can spin, zoom and flip.
 Content is Markdown. The build turns it into a single static `dist/index.html`.

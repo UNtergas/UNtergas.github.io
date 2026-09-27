@@ -164,7 +164,7 @@ function build(){
     return there;
   });
   const buttons = downloads.map(d =>
-    `  <a class="btn download" href="${esc(d.file)}" download${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}>${esc(d.label)}</a>`
+    `  <a class="btn download" href="${esc(d.file)}" target="_blank" rel="noopener"${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}>${esc(d.label)}</a>`
   ).join('\n');
 
   const html = readFileSync(join(SRC, 'template.html'), 'utf8')

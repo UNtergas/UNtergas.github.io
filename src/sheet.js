@@ -48,6 +48,18 @@
     if (dx || dy) { st.px += dx; st.py += dy; applyTransform(); }
   }
 
+  function render(){
+    const k = base * st.zoom, ry = st.ry + st.flip;
+    root.style.setProperty('--k', k);
+    stage.classList.toggle('panning', st.zoom > 1.02);
+    applyTransform();
+    correctPan();
+    const facing = Math.abs(Math.cos(ry * Math.PI / 180));
+    shade.style.transform =
+      `translate(${st.px}px, ${st.py + 300*k}px) scaleX(${(0.25+0.75*facing)*k}) scaleY(${k})`;
+    shade.style.opacity = 0.22 + 0.33 * facing;
+  }
+
   /* shrink the type until the page fits inside its margins.
      .measuring turns on overflow:hidden just for the measurement — the rest of
      the time the box must stay unclipped or it cuts the tooltips off. */

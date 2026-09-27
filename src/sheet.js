@@ -18,30 +18,34 @@
     base = Math.max(0.2, Math.min(w * 0.9 / 720, h * 0.94 / 1018));
   }
 
-  /* how far the sheet may slide before it leaves the stage */
-  function panLimits(){
-    const k = base * st.zoom;
-    return {
-      x: Math.max(0, (720 * k - stage.clientWidth) / 2 + 60),
-      y: Math.max(0, (1018 * k - stage.clientHeight) / 2 + 60)
-    };
-  }
-  function clampPan(){
-    const l = panLimits();
-    st.px = clamp(st.px, -l.x, l.x);
-    st.py = clamp(st.py, -l.y, l.y);
-  }
+  /* Pan bounds are measured, not predicted: the sheet is tilted inside a
+     perspective, so its projected box is not 720x1018 * k. Measure where it
+     actually landed, then pull it back only if an edge came off the stage. */
+  const EDGE = 40;                       /* paper may pass the stage edge by this much */
 
-  function render(){
-    const k = base * st.zoom, ry = st.ry + st.flip;
-    root.style.setProperty('--k', k);
-    clampPan();
-    stage.classList.toggle('panning', st.zoom > 1.02);
+  function applyTransform(){
+    const ry = st.ry + st.flip;
     sheet.style.transform =
       `translate3d(${st.px}px, ${st.py}px, 0) rotateX(${st.rx}deg) rotateY(${ry}deg)`;
-    const facing = Math.abs(Math.cos(ry * Math.PI / 180));
-    shade.style.transform = `translate(${st.px}px, ${st.py + 300*k}px) scaleX(${(0.25+0.75*facing)*k}) scaleY(${k})`;
-    shade.style.opacity = 0.22 + 0.33 * facing;
+  }
+
+  function correctPan(){
+    const s = stage.getBoundingClientRect(), r = sheet.getBoundingClientRect();
+    /* centre from the measured box, extent from layout size: rotation moves the
+       projection but never the centre, so this stays stable mid-flip */
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const hw = sheet.offsetWidth / 2, hh = sheet.offsetHeight / 2;
+    let dx = 0, dy = 0;
+
+    if (hw * 2 <= s.width)        dx = (s.left + s.width / 2) - cx;          /* fits: centre it */
+    else if (cx - hw > s.left + EDGE)   dx = s.left + EDGE - (cx - hw);      /* gap on the left */
+    else if (cx + hw < s.right - EDGE)  dx = s.right - EDGE - (cx + hw);     /* gap on the right */
+
+    if (hh * 2 <= s.height)       dy = (s.top + s.height / 2) - cy;
+    else if (cy - hh > s.top + EDGE)    dy = s.top + EDGE - (cy - hh);
+    else if (cy + hh < s.bottom - EDGE) dy = s.bottom - EDGE - (cy + hh);
+
+    if (dx || dy) { st.px += dx; st.py += dy; applyTransform(); }
   }
 
   /* shrink the type until the page fits inside its margins.

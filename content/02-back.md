@@ -37,6 +37,7 @@ INSA Centre Val de Loire
 - Vietnamese: Native
 
 ## Interest {grid}
-- Systems & simulation:relational Notion base for sports leagues>>auto-ranking formulas, linked player/team/nation pages
+- Systems & simulation: relational Notion base for sports leagues>>auto-ranking formulas, linked player/team/nation pages
 - Bouldering: dyno and slab
-- Philosophy (existentialism, ethics)
+- Philosophy: existentialism, ethics
+- Music: jazz to RnB to Pop, and I like guitar

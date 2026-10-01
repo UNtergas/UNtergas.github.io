@@ -82,7 +82,11 @@
   relayout();
 
   let rt;
-  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(relayout, 120); });
+  const requeue = () => { clearTimeout(rt); rt = setTimeout(relayout, 120); };
+  addEventListener('resize', requeue);
+  addEventListener('orientationchange', () => setTimeout(relayout, 250));
+  /* iOS fires this, not resize, when the browser toolbar collapses or expands */
+  if (window.visualViewport) visualViewport.addEventListener('resize', requeue);
 
   if (!reduce) {
     const from = { rx:16, ry:-42 }, t0 = performance.now();

@@ -1,5 +1,5 @@
 ---
-title: [Nguyen, Anh Tuan]
+title: [Nguyen Anh Tuan]
 role: Full-stack engineer — TypeScript, Node, React
 contact: true
 # stamp: [Available, Nov 2026, Paris]     # uncomment for the round mark
@@ -9,27 +9,26 @@ sign: Turn the page for projects and skills.
 
 ## About {text}
 
-Security and information technology engineer. Since 2025 on a {{ZTNA|Zero-trust network access: every request is authenticated and authorised, nothing is trusted for being inside the network.}} SaaS platform in TypeScript and Node.js, autonomous and in direct contact with the CTO.
-
-Backend and platform work: identity federation with Keycloak and Entra ID, {{RBAC|Role-based access control: permissions attach to roles, roles attach to users and devices.}}, and OpenAPI contracts consumed by the mobile, SDK and C++ network teams. Took the central console from prototype to a self-hostable product, shipped to production.
+Computer science and security engineer. Since 2025, full-stack TypeScript/Node.js developer on the central console of a {{ZTNA|Zero-trust network access: every request is authenticated and authorised, nothing is trusted for being inside the network.}} platform, the system our apps and our network depend on. Two developers, no tech lead, working directly with the CTO, so I take features from spec to production.
 
 ## Experience
 
-### Full-stack engineer | 05/2026 — present
+### Full-stack engineer, fixed-term contract | 05/2026 — present
 Snowpack, ZTNA platform — Paris
 
-- API latency down 3–6× (average, p50, p99) under {{k6|Load-testing tool. Same scenario replayed before and after, so the numbers are comparable.}} load. Most of the gain came from upgrading to Node 24, which the old setup blocked: the backend ran through uncompiled ts-node, so I resolved its cyclic dependencies and migrated it to compiled ESM modules first.
-- Production incident closed: CPU spiking 40–70% every ten minutes, traced in Grafana to a {{gzip bomb|A tiny compressed payload that expands to gigabytes, exhausting CPU and memory on decompression.}}. Capped decompression size, restricted the API to JSON, reworked the cron jobs. Back to 10–20%.
-- Central console shipped self-hostable: validated on Docker and a Raspberry Pi, packaged as an esbuild bundle and a {{single executable|Node SEA bundles runtime and app into one binary, so customers install nothing.}}, with customer docs and a setup script.
-- GitLab CI split into SaaS and customer-build pipelines. Every push runs the Vitest suite, end-to-end tests included, against a containerised MongoDB.
-- {{Audit log|Who did what, when, on which tenant. Stored in MongoDB for later review.}} for the console: authentication (success and failure) and tenant operations (create, read, update, delete) recorded from every endpoint, written asynchronously through the task queue I built during the internship.
-- Fixed {{TOCTOU|Time-of-check to time-of-use: two requests both pass the check before either writes. Uniqueness has to be enforced where the write happens.}} races on create and update paths by replacing application read-then-write checks with MongoDB unique indexes.
+- **Production incident.** The console's CPU spiked every ten minutes. I traced it in Grafana to two causes: background jobs {{piling up|A timer that doesn't wait for the previous async run: when the server slowed, runs overlapped and added more load.}} and one client device sending ever-larger reports. Same day, a {{reversible stopgap|For the weekend, the heavy calculation on device reports was skipped but the raw data kept; on Monday I recalculated it.}} that kept the raw data; then both fixes: jobs skip a run while the previous one is still going, and a 2 MB report limit {{from real data|Every stored report over the last three months was under 1 MB, so the limit is twice that.}}. CPU from 100% at peak to 10–20% at most since.
+- **Node.js upgrade (18 → 24).** Moved the backend off an unsupported version and {{pre-compiled it|The code used to be translated on the fly at every start. It is now compiled ahead of time, which also type-checks it.}}, after untangling shared packages that depended on each other. Start-up 2.5 → 1.5 min, every CI pipeline 1–1.5 min faster, deployed image 30% smaller, about 40 hidden type errors surfaced.
+- **Partner app identity (Android SDK).** Companies plug their own Android apps into ours, and each app should reach only the services it needs. I designed how our app tells which app is calling: it asks the phone's operating system, which {{checks each app's signature|Package name plus signing certificate, recorded by Android at install. Knowing the certificate doesn't let you forge the signature.}}. The {{allowed list|The console sends it each time an app connects. The saved copy is used only when the console can't be reached, and expires with the user's login, at most ten days.}} is kept on the phone so field devices keep working offline.
+- **Self-hostable console.** For a prospective client who wanted our platform offline on their own machines: {{trimmed the console|Removed what an offline client can't use: payments, referrals, catalog plans.}} to what works offline (about 6,000 lines removed) and packaged it as {{one executable plus its dependencies|Node SEA: the Node runtime and our minified code in one binary; third-party packages ship next to it.}}, for standard and ARM machines, tested on a Raspberry Pi. Four colleagues installed it alone from my guide in 30–40 minutes.
+- **Release testing.** Manual beta rounds across seven platforms, with small tools I wrote so anyone on the team can replay edge cases. They caught a bug nobody had spotted, before it reached a release.
+- **Audit log.** Records sign-ins (success and failure) and the actions taken in each company's space, written in the background through the task queue.
 
 ### Full-stack developer, internship | 02/2025 — 03/2026
 Snowpack, ZTNA platform — Paris
 
-- Group management, idea to production in two months: the CTO's starting point was one line (group users and devices, members share one config); I wrote the spec and built it. Services and licences propagate to members automatically and are recomputed on any membership or policy change.
-- Identity federation with Keycloak and Microsoft Entra ID through {{one shared SSO flow|Both providers use the same login flow and callback; only their configuration differs.}}. Users and group memberships are synced into the console on every SSO login.
-- Typed task queue: event types checked at compile time, one dispatcher per queue, async and sync modes. Another developer picked it up with no help, and it later carried the console's audit log.
-- Central console as the single entry point for every Snowpack component, with OpenAPI contracts consumed by the mobile, SDK and C++ network teams.
-- React load time cut 4× under 2G throttling by removing fetches duplicated across contexts, adding caching, and narrowing queries.
+- **Devices, seven weeks after joining.** Added IoT devices as a new kind of account that signs in with a token instead of a password, with its own access control, backend and frontend.
+- **Group-based access, in under two months.** Access used to be granted one user at a time. From the CTO's idea, I wrote the spec, {{left licences for later|Licences have their own expiry and ranked tiers. The client only needed bulk access first.}}, and built it end to end: bulk assignment of users to services, {{inherited access|Each member's group access is its own record linked to the group's, so removing one never deletes the other. When direct and group access overlap, the more generous wins: both come from the same company owner.}}, a change log, 26 tests. Live July 2025; later extended to licences and devices without changing the model.
+- **Identity-provider sync** with Keycloak and Microsoft Entra ID: each company's groups and members copied every five minutes and at sign-in. The provider is the source of truth, so someone removed there loses the access that came with the group. Closed an {{SSRF|Server-side request forgery: a company types in its Keycloak address, so our server could have been pointed at our own internal network. Internal addresses are now refused.}} hole.
+- **Typed task queue.** After a review where my licence logic was hard to follow and hid a double-licence bug, I moved it to one central place and a queue that applies the main licence changes one at a time, replacing {{a lock that had failed|It locked per group while all of a company's groups share one licence pool, and the free licence was looked up before taking the lock. The queue checks and assigns in one step.}}. Misuse is a compile error. Twelve queues today, reused by another developer without help.
+- **Faster data loading on every console page.** The server answered in 200–400 ms, so the problem was the page: every page called one shared "reload everything", about eleven requests. Now each page asks only for what it shows, with {{a short cache|Data is remembered for 60 seconds and always fetched fresh after any change, so an admin never sees outdated data after editing.}} refreshed after any change. Users page 10–15 s → 4–5 s, 2–3×.
+- **Data usage tracking.** Daily data usage per user, device and partner, built from the raw usage logs, with the admin charts to read it. A one-off migration {{rebuilt the history|It read the past logs in batches of 1,000, so the existing history showed up in the new view without loading everything into memory.}} from the past logs.

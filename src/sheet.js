@@ -69,7 +69,7 @@
       let size = 16;
       face.classList.add('measuring');
       face.style.setProperty('--fs', size + 'px');
-      while (body.scrollHeight > body.clientHeight - 2 && size > 10.5) {
+      while (body.scrollHeight > body.clientHeight && size > 10.5) {
         size -= 0.25;
         face.style.setProperty('--fs', size + 'px');
       }

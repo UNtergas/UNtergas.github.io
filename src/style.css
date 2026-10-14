@@ -58,8 +58,8 @@ body{
 
 /* ---------- type ---------- */
 h1{font-size:3.25em;line-height:1.02;font-weight:600;margin:0 0 .12em;letter-spacing:-.015em}
-.role{font-size:1.2em;font-style:italic;color:var(--accent);margin:0 0 .9em}
-.meta{font-size:.87em;color:var(--graphite);display:flex;flex-wrap:wrap;gap:.25em 1.4em;margin:0 0 1.7em}
+.role{font-size:1.2em;font-style:italic;color:var(--accent);margin:0 0 .55em}
+.meta{font-size:.87em;color:var(--graphite);display:flex;flex-wrap:wrap;gap:.25em 1.4em;margin:0 0 1.1em}
 .meta a{color:var(--graphite);text-decoration:none;border-bottom:1px solid rgba(111,114,122,.4)}
 .meta a:hover{color:var(--accent);border-color:var(--accent)}
 h2{font-size:.82em;font-weight:600;color:var(--accent);margin:0 0 .85em;

@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, copyFileSync, existsSync, watch } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const ROOT    = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT = join(ROOT, 'content');
@@ -163,8 +164,9 @@ function build(){
     if (!there) console.warn(`! missing content/${d.file} — "${d.label}" button not rendered`);
     return there;
   });
+  /* ?v=<content hash>: a new PDF gets a new URL, so browsers skip their cached copy */
   const buttons = downloads.map(d =>
-    `  <a class="btn download" href="${esc(d.file)}" target="_blank" rel="noopener"${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}>${esc(d.label)}</a>`
+    `  <a class="btn download" href="${esc(d.file)}?v=${createHash('sha1').update(readFileSync(join(CONTENT, d.file))).digest('hex').slice(0, 8)}" target="_blank" rel="noopener"${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}>${esc(d.label)}</a>`
   ).join('\n');
 
   const html = readFileSync(join(SRC, 'template.html'), 'utf8')

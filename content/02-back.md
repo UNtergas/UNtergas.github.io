@@ -19,7 +19,7 @@ INSA Centre Val de Loire: 5th-year school project, planned for 2-3, done alone
 
 - A web app to follow an apprenticeship, with three roles: the company assigns missions, the apprentice logs activities and rates their own skills (with a chart), the INSA tutor evaluates them, and both give feedback.
 - NestJS backend: sign-in with a JWT in a cookie, {{guards|Custom decorators and Nest guards check the user's role before an endpoint runs.}} that restrict endpoints by role, Prisma and PostgreSQL. Next.js frontend, with a middleware that blocks pages above the user's role.
-- pnpm monorepo with a shared models package, Docker and an Nginx reverse proxy. Hosted on my own server for the demo only.
+- pnpm monorepo with a shared models package, Docker and an Nginx reverse proxy.
 
 ## Education
 

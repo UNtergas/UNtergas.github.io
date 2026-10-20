@@ -1,5 +1,5 @@
 {
-  "title": "Nguyen Anh Tuan — Full-stack engineer",
+  "title": "Nguyen Anh Tuan, Full-stack engineer",
   "description": "A CV you can spin. TypeScript, Node, React. Paris.",
   "ogImage": "https://UNtergas.github.io/og.png",
   "contact": [
@@ -23,12 +23,12 @@
   ],
   "downloads": [
     {
-      "label": "CV — English (PDF)",
+      "label": "CV English (PDF)",
       "file": "cv-en.pdf",
       "tip": "The printable one-pager."
     },
     {
-      "label": "CV — Français (PDF)",
+      "label": "CV Français (PDF)",
       "file": "cv-fr.pdf",
       "tip": "La version française."
     }

@@ -21,6 +21,12 @@ INSA Centre Val de Loire: 5th-year school project, planned for 2-3, done alone
 - NestJS backend: sign-in with a JWT in a cookie, {{guards|Custom decorators and Nest guards check the user's role before an endpoint runs.}} that restrict endpoints by role, Prisma and PostgreSQL. Next.js frontend, with a middleware that blocks pages above the user's role.
 - pnpm monorepo with a shared models package, Docker and an Nginx reverse proxy.
 
+### Appius, city-builder game | 10/2022 - 01/2023
+INSA Centre Val de Loire: school project, team of six
+
+- I split the tasks and gave everyone time to contribute. Three weeks before the deadline, I took the rest in hand and wrote {{about three quarters of the code|2,598 of about 3,413 lines in the final version, by git blame.}}.
+- In Python: A* pathfinding for roads and walkers, fire risk and water overlays, minimap, rendering. Code: [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
+
 ## Education
 
 ### Engineering degree, security and information technology | 2020 - 2026

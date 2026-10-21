@@ -129,11 +129,6 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
 .box.zoom::after{content:"";position:absolute;left:0;top:0;width:55%;height:55%;border-right:calc(1px * var(--k)) solid var(--ink);border-bottom:calc(1px * var(--k)) solid var(--ink)}
 .box:active{background:var(--ink)}
 
-/* ---------- reverse video ([i]): invert the paper and the bar, stage turns white ---------- */
-html.reverse body{background:#fff}
-html.reverse .face,html.reverse #bar{filter:invert(1)}
-html.reverse #hint{color:#555}
-
 /* ---------- bar: key bar + status line, like a terminal app ---------- */
 #bar{
   flex:none;position:relative;z-index:20;background:var(--void);

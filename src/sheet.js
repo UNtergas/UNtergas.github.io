@@ -183,7 +183,7 @@
 
   /* ---- status line: tooltips, counters, uptime ---- */
   const msg = document.getElementById('msg'), stats = document.getElementById('stats');
-  const IDLE = 'hover a dotted word · [f] flip · [c] contact · [i] invert';
+  const IDLE = 'hover a dotted word · [f] flip · [c] contact';
   const store = {
     get(k){ try { return +localStorage.getItem(k) || 0; } catch { return 0; } },
     bump(k){ const v = this.get(k) + 1; try { localStorage.setItem(k, v); } catch {} return v; },
@@ -265,16 +265,9 @@
     })(t0);
   }
 
-  /* ---- reverse video, contact, window boxes ---- */
-  function invert(){
-    const on = root.classList.toggle('reverse');
-    try { localStorage.setItem('cv.reverse', on ? '1' : ''); } catch {}
-    say(on ? 'reverse video on' : 'reverse video off');
-  }
-  try { if (localStorage.getItem('cv.reverse')) root.classList.add('reverse'); } catch {}
+  /* ---- contact, window boxes ---- */
   const contact = document.getElementById('contact');
   contact.addEventListener('click', () => say('opening your mail app…'));
-  document.getElementById('invert').onclick = invert;
   stage.addEventListener('click', e => {
     if (moved > 5) return;
     if (e.target.closest('.box.close')) say("a CV can't be closed. try [c] to write to me");
@@ -312,7 +305,6 @@
     if (k === 'f' || k === 'F' || k === ' ') { e.preventDefault(); flip(); }
     if (k === '0') layFlat();
     if (k === 'c' || k === 'C') contact.click();
-    if (k === 'i' || k === 'I') invert();
     if (k === 'Escape') { document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on')); say(IDLE); }
   });
 

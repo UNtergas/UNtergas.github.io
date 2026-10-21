@@ -37,7 +37,7 @@ INSA Centre Val de Loire
 
 ## Skills {grid}
 
-- Languages: TypeScript, JavaScript, Python, SQL, Java (academic)
+- Languages: TypeScript, JavaScript, Python, SQL
 - Backend: Node.js, Express, TSOA, NestJS, REST, OpenAPI, FastAPI
 - Frontend: React, Next.js, Vite
 - Data: MongoDB, TypeORM, PostgreSQL, Prisma, SQL

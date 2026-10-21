@@ -69,7 +69,7 @@
       let size = 16;
       face.classList.add('measuring');
       face.style.setProperty('--fs', size + 'px');
-      while (body.scrollHeight > body.clientHeight && size > 10.5) {
+      while (body.scrollHeight > body.clientHeight && size > 8.5) {
         size -= 0.25;
         face.style.setProperty('--fs', size + 'px');
       }
@@ -181,14 +181,70 @@
     hint.classList.add('gone');
   }, { passive:false });
 
-  function flip(){
-    const to = st.flip + 180, from = st.flip, t0 = performance.now();
+  /* ---- status line: tooltips, counters, uptime ---- */
+  const msg = document.getElementById('msg'), stats = document.getElementById('stats');
+  const IDLE = 'hover a dotted word · [f] flip · [c] contact · [i] invert';
+  const store = {
+    get(k){ try { return +localStorage.getItem(k) || 0; } catch { return 0; } },
+    bump(k){ const v = this.get(k) + 1; try { localStorage.setItem(k, v); } catch {} return v; },
+  };
+  let flips = store.get('cv.flips'), dynos = store.get('cv.dynos');
+
+  /* uptime from data-since="YYYY-MM" (and data-until, once the job ends) */
+  function uptime(){
+    const since = stats.dataset.since;
+    if (!since) return '';
+    const [y0, m0] = since.split('-').map(Number);
+    const end = stats.dataset.until ? stats.dataset.until.split('-').map(Number) : null;
+    const now = new Date(), y1 = end ? end[0] : now.getFullYear(), m1 = end ? end[1] : now.getMonth() + 1;
+    const months = Math.max(0, (y1 - y0) * 12 + (m1 - m0));
+    const t = (months >= 12 ? Math.floor(months / 12) + 'y ' : '') + (months % 12) + 'm';
+    return ` · up <b>${t}</b>${stats.dataset.label ? ' @ ' + stats.dataset.label : ''}`;
+  }
+  function showStats(){
+    stats.innerHTML = `flips <b>${flips}</b>` + (dynos ? ` · dynos <b>${dynos}</b>` : '') + uptime();
+  }
+  function say(text, cls){
+    msg.textContent = text;
+    msg.className = cls || '';
+  }
+  say(IDLE); showStats();
+  setInterval(showStats, 60000);
+
+  const tipOf = t => t && t.closest && t.closest('[data-tip]');
+  document.addEventListener('pointerover', e => { const t = tipOf(e.target); if (t) say(t.dataset.tip); });
+  document.addEventListener('pointerout',  e => { const t = tipOf(e.target); if (t && !t.classList.contains('tip-on')) say(IDLE); });
+  document.addEventListener('focusin',     e => { const t = tipOf(e.target); if (t) say(t.dataset.tip); });
+
+  /* ---- flip, and the dyno: a second flip within 700 ms becomes one 720° spin ---- */
+  let anim = null, lastFlip = 0;
+  function animateTo(to, dur){
+    const from = st.flip, t0 = performance.now(), id = {};
+    anim = id;
     if (reduce) { st.flip = to; render(); return; }
-    (function anim(now){
-      const k = Math.min(1, (now - t0) / 620);
+    (function step(now){
+      if (anim !== id) return;                       /* a newer flip took over */
+      const k = Math.min(1, (now - t0) / dur);
       st.flip = from + (to - from) * (1 - Math.pow(1 - k, 3)); render();
-      if (k < 1) requestAnimationFrame(anim);
+      if (k < 1) requestAnimationFrame(step); else anim = null;
     })(t0);
+  }
+  let base0 = 0;                                     /* where the current flip started */
+  function flip(){
+    const now = performance.now();
+    flips = store.bump('cv.flips');
+    if (now - lastFlip < 700 && anim) {              /* dyno! */
+      dynos = store.bump('cv.dynos');
+      lastFlip = 0;
+      animateTo(base0 + 720, 1150);
+      say('dyno! caught the hold.', 'dyno');
+      setTimeout(() => say(IDLE), 2200);
+    } else {
+      lastFlip = now;
+      base0 = Math.round(st.flip / 180) * 180;
+      animateTo(base0 + 180, 620);
+    }
+    showStats();
   }
 
   /* lay flat = face on, zoomed back out to fit */
@@ -209,19 +265,25 @@
     })(t0);
   }
 
+  /* ---- reverse video, contact, window boxes ---- */
+  function invert(){
+    const on = root.classList.toggle('reverse');
+    try { localStorage.setItem('cv.reverse', on ? '1' : ''); } catch {}
+    say(on ? 'reverse video on' : 'reverse video off');
+  }
+  try { if (localStorage.getItem('cv.reverse')) root.classList.add('reverse'); } catch {}
+  const contact = document.getElementById('contact');
+  contact.addEventListener('click', () => say('opening your mail app…'));
+  document.getElementById('invert').onclick = invert;
+  stage.addEventListener('click', e => {
+    if (moved > 5) return;
+    if (e.target.closest('.box.close')) say("a CV can't be closed. try [c] to write to me");
+    if (e.target.closest('.box.zoom')) layFlat();
+  });
+
   document.getElementById('flip').onclick = flip;
   document.getElementById('reset').onclick = layFlat;
   stage.addEventListener('dblclick', flip);
-
-  /* a tooltip near the right edge of the window anchors from the right instead,
-     so it can never be pushed off screen once the paper stops clipping it */
-  const TIP_W = 300;
-  stage.addEventListener('pointerover', e => {
-    const t = e.target.closest && e.target.closest('[data-tip]');
-    if (!t) return;
-    const r = t.getBoundingClientRect();
-    t.classList.toggle('tip-flip', r.left + TIP_W > innerWidth - 12);
-  });
 
   const coarse = matchMedia('(hover: none)').matches;
   stage.addEventListener('click', e => {
@@ -231,14 +293,13 @@
     document.querySelectorAll('.tip-on').forEach(n => { if (n !== t) n.classList.remove('tip-on'); });
     if (t) {
       e.preventDefault();
-      const r = t.getBoundingClientRect();
-      t.classList.toggle('tip-flip', r.left + TIP_W > innerWidth - 12);
       t.classList.toggle('tip-on');
+      say(t.classList.contains('tip-on') ? t.dataset.tip : IDLE);
     }
   });
 
   addEventListener('keydown', e => {
-    if (e.target.closest('a')) return;
+    if (e.target.closest && e.target.closest('a')) return;
     const k = e.key;
     const panning = st.zoom > 1.02 && !e.shiftKey;   /* Shift forces rotation */
     const STEP = 60;
@@ -250,7 +311,9 @@
     if (k === '-') setZoom(st.zoom / 1.15);
     if (k === 'f' || k === 'F' || k === ' ') { e.preventDefault(); flip(); }
     if (k === '0') layFlat();
-    if (k === 'Escape') document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on'));
+    if (k === 'c' || k === 'C') contact.click();
+    if (k === 'i' || k === 'I') invert();
+    if (k === 'Escape') { document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on')); say(IDLE); }
   });
 
   setTimeout(() => hint.classList.add('gone'), 7000);

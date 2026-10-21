@@ -44,6 +44,7 @@ INSA Centre Val de Loire
 - Security: Authentication, RBAC, application security, Keycloak, Microsoft Entra ID
 - Testing: Vitest (TDD, end-to-end), k6 load testing
 - Build: Docker, GitLab CI, ESM, swc, esbuild, Node SEA, Grafana
+- System: Linux (daily driver: niri, Hyprland), Bash, Git
 - AI: Claude Code (code from my specs, reviewed by diff)
 - Spoken: English, French, Vietnamese
 

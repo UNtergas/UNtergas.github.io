@@ -11,23 +11,28 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 __STYLE__
 </style>
 </head>
 <body>
 <div id="stage">
-  <p id="hint">Drag to turn. Scroll to zoom. Double-click to flip.</p>
+  <p id="hint">drag to turn · scroll to zoom · double-click or [f] to flip</p>
   <div id="shade"></div>
   <div id="sheet">
 __PAGES__
   </div>
 </div>
 <div id="bar">
-  <button class="btn" id="flip">Flip the page</button>
-  <button class="btn" id="reset">Lay it flat</button>
+  <div id="keys">
+    <button class="btn" id="flip"><kbd>f</kbd>flip</button>
+    <button class="btn" id="reset"><kbd>0</kbd>lay flat</button>
+    <a class="btn" id="contact" href="__MAILTO__"><kbd>c</kbd>contact</a>
+    <button class="btn" id="invert"><kbd>i</kbd>invert</button>
 __DOWNLOADS__
+  </div>
+  <div id="status"><span id="prompt">tuan@cv:~$</span><span id="msg" aria-live="polite"></span><span id="stats"__UPTIME__></span></div>
 </div>
 <script>
 __SCRIPT__

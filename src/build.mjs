@@ -132,7 +132,13 @@ function renderPage(page, i, total, site){
         : `<span${c.tip ? ` tabindex="0" data-tip="${esc(c.tip)}"` : ''}>${esc(c.text)}</span>`).join('')}</p>`
     : '';
 
+  const man = site.man
+    ? `<p class="man-head"><span>${esc(site.man[0])}</span><span>${esc(site.man[1])}</span><span>${esc(site.man[0])}</span></p>`
+    : '';
+  const win = `<div class="titlebar" aria-hidden="true"><span class="box close" title="close"></span><span class="wtitle">${i === 0 ? 'cv.man' : 'activities.man'} ${i + 1}/${total}</span><span class="box zoom" title="lay flat"></span></div>`;
   return `<article class="face ${i === 0 ? 'front' : 'back'}">
+      ${win}
+      ${man}
       ${stamp}
       <div class="body">
         <h1>${titleLines}</h1>
@@ -176,6 +182,10 @@ function build(){
     .replace('__STYLE__',     readFileSync(join(SRC, 'style.css'), 'utf8'))
     .replace('__SCRIPT__',    readFileSync(join(SRC, 'sheet.js'), 'utf8'))
     .replace('__DOWNLOADS__', buttons)
+    .replace('__MAILTO__', esc(((site.contact || []).find(c => /^mailto:/.test(c.href || '')) || {}).href || '#'))
+    .replace('__UPTIME__', site.uptime
+      ? ` data-since="${esc(site.uptime.since)}" data-until="${esc(site.uptime.until || '')}" data-label="${esc(site.uptime.label || '')}"`
+      : '')
     .replace('__PAGES__',     pages.slice(0, 2).map((p, i) => renderPage(p, i, pages.length, site)).join('\n'));
 
   mkdirSync(DIST, { recursive: true });

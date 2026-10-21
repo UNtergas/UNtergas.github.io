@@ -32,5 +32,14 @@
       "file": "cv-fr.pdf",
       "tip": "La version française."
     }
-  ]
+  ],
+  "man": [
+    "TUAN(1)",
+    "Curriculum Vitae"
+  ],
+  "uptime": {
+    "since": "2025-02",
+    "until": "",
+    "label": "snowpack"
+  }
 }

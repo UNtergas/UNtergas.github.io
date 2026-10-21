@@ -238,12 +238,30 @@
     })(t0);
   }
   /* one-line ASCII climber: launches off the left hold, catches the right one */
-  const FRAMES = ['▮o            ▮', '▮ \\o          ▮', '▮    \\o/      ▮', '▮       \\o/   ▮', '▮           o/▮'];
+  /* ASCII climber (head, body, legs) leaps from the left hold to the right one.
+     Drawn in #climber, an overlay above the bar, so the layout never moves. */
+  const climber = document.getElementById('climber');
+  const FIG = {
+    hang:  [' o ', '/|\\', '/ \\'],
+    leap:  ['\\o/', ' | ', '/ \\'],
+    catch: [' o/', '/| ', '/ \\'],
+  };
+  const W = 15;                                       /* gap between the two holds */
+  const frame = (fig, x) => FIG[fig].map((l, i) => {
+    const row = (' '.repeat(x) + l).padEnd(W);
+    return i === 0 ? '▮' + row + '▮' : ' ' + row + ' ';
+  }).join('\n');
+  const STEPS = [['hang', 0], ['leap', 3], ['leap', 6], ['leap', 9], ['catch', 12]];
   function climb(){
     let i = 0;
+    climber.classList.add('on');
+    say('dyno…', 'dyno');
     (function next(){
-      if (i < FRAMES.length) { say(FRAMES[i++], 'dyno'); setTimeout(next, 190); }
-      else { say('▮           o/▮  dyno! caught the hold.', 'dyno'); setTimeout(idle, 2400); }
+      if (i < STEPS.length) { climber.textContent = frame(...STEPS[i++]); setTimeout(next, 190); }
+      else {
+        say('dyno! caught the hold.', 'dyno');
+        setTimeout(() => { climber.classList.remove('on'); idle(); }, 2200);
+      }
     })();
   }
   let base0 = 0;                                     /* where the current flip started */

@@ -5,7 +5,6 @@
   const stage = document.getElementById('stage');
   const sheet = document.getElementById('sheet');
   const shade = document.getElementById('shade');
-  const hint  = document.getElementById('hint');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const st = { rx:-7, ry:-4, zoom:1, flip:0, vx:0, vy:0, px:0, py:0, drag:false };
@@ -111,7 +110,7 @@
     pts.set(e.pointerId, e);
     if (pts.size === 1) { st.drag = true; last = e; st.vx = st.vy = 0; stage.classList.add('dragging'); }
     if (pts.size === 2) { pinch0 = dist(); zoom0 = st.zoom; }
-    touched = true; hint.classList.add('gone');
+    touched = true;
   });
 
   stage.addEventListener('pointermove', e => {
@@ -178,12 +177,19 @@
   stage.addEventListener('wheel', e => {
     e.preventDefault();
     setZoom(st.zoom * (e.deltaY > 0 ? 0.9 : 1.11), e.clientX, e.clientY);
-    hint.classList.add('gone');
   }, { passive:false });
 
   /* ---- status line: tooltips, counters, uptime ---- */
   const msg = document.getElementById('msg'), stats = document.getElementById('stats');
-  const IDLE = 'hover a dotted word · [f] flip · [c] contact';
+  /* idle hints rotate in the status line (they used to float over the paper) */
+  const IDLES = [
+    'drag to turn · scroll or pinch to zoom · [f] flip',
+    'hover a dotted word or a number for details',
+    'press [f] twice, fast: dyno',
+    '[c] to write to me · ↓ to download the CV',
+  ];
+  let idleAt = 0, idling = true;
+  const idle = () => { say(IDLES[idleAt % IDLES.length]); idling = true; };
   const store = {
     get(k){ try { return +localStorage.getItem(k) || 0; } catch { return 0; } },
     bump(k){ const v = this.get(k) + 1; try { localStorage.setItem(k, v); } catch {} return v; },
@@ -205,15 +211,17 @@
     stats.innerHTML = `flips <b>${flips}</b>` + (dynos ? ` · dynos <b>${dynos}</b>` : '') + uptime();
   }
   function say(text, cls){
+    idling = false;
     msg.textContent = text;
     msg.className = cls || '';
   }
-  say(IDLE); showStats();
+  idle(); showStats();
+  setInterval(() => { if (idling) { idleAt++; idle(); } }, 4500);
   setInterval(showStats, 60000);
 
   const tipOf = t => t && t.closest && t.closest('[data-tip]');
   document.addEventListener('pointerover', e => { const t = tipOf(e.target); if (t) say(t.dataset.tip); });
-  document.addEventListener('pointerout',  e => { const t = tipOf(e.target); if (t && !t.classList.contains('tip-on')) say(IDLE); });
+  document.addEventListener('pointerout',  e => { const t = tipOf(e.target); if (t && !t.classList.contains('tip-on')) idle(); });
   document.addEventListener('focusin',     e => { const t = tipOf(e.target); if (t) say(t.dataset.tip); });
 
   /* ---- flip, and the dyno: a second flip within 700 ms becomes one 720° spin ---- */
@@ -229,6 +237,15 @@
       if (k < 1) requestAnimationFrame(step); else anim = null;
     })(t0);
   }
+  /* one-line ASCII climber: launches off the left hold, catches the right one */
+  const FRAMES = ['▮o            ▮', '▮ \\o          ▮', '▮    \\o/      ▮', '▮       \\o/   ▮', '▮           o/▮'];
+  function climb(){
+    let i = 0;
+    (function next(){
+      if (i < FRAMES.length) { say(FRAMES[i++], 'dyno'); setTimeout(next, 190); }
+      else { say('▮           o/▮  dyno! caught the hold.', 'dyno'); setTimeout(idle, 2400); }
+    })();
+  }
   let base0 = 0;                                     /* where the current flip started */
   function flip(){
     const now = performance.now();
@@ -237,8 +254,7 @@
       dynos = store.bump('cv.dynos');
       lastFlip = 0;
       animateTo(base0 + 720, 1150);
-      say('dyno! caught the hold.', 'dyno');
-      setTimeout(() => say(IDLE), 2200);
+      climb();
     } else {
       lastFlip = now;
       base0 = Math.round(st.flip / 180) * 180;
@@ -275,6 +291,7 @@
   });
 
   document.getElementById('flip').onclick = flip;
+  document.getElementById('dyno').onclick = () => { flip(); setTimeout(flip, 120); };
   document.getElementById('reset').onclick = layFlat;
   stage.addEventListener('dblclick', flip);
 
@@ -287,7 +304,7 @@
     if (t) {
       e.preventDefault();
       t.classList.toggle('tip-on');
-      say(t.classList.contains('tip-on') ? t.dataset.tip : IDLE);
+      if (t.classList.contains('tip-on')) say(t.dataset.tip); else idle();
     }
   });
 
@@ -305,8 +322,7 @@
     if (k === 'f' || k === 'F' || k === ' ') { e.preventDefault(); flip(); }
     if (k === '0') layFlat();
     if (k === 'c' || k === 'C') contact.click();
-    if (k === 'Escape') { document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on')); say(IDLE); }
+    if (k === 'Escape') { document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on')); idle(); }
   });
 
-  setTimeout(() => hint.classList.add('gone'), 7000);
 })();

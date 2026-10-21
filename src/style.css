@@ -142,20 +142,18 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
   background:none;border:0;border-radius:0;padding:4px 6px;cursor:pointer;line-height:1.2;
 }
 .btn kbd{font-family:inherit;background:#fff;color:#000;padding:0 .35em;margin-right:.5em}
+.btn kbd + kbd{margin-left:-.3em}
 .btn.download::before{content:"↓ ";color:#888}
 .btn:hover,.btn:focus-visible{background:#fff;color:#000;outline:none}
 .btn:hover kbd,.btn:focus-visible kbd{background:#000;color:#fff}
 #status{display:flex;flex-wrap:wrap;gap:4px 1ch;align-items:baseline;margin-top:6px;padding-top:6px;border-top:1px dashed #555;color:#fff}
 #prompt{color:#888;flex:none}
-#msg{flex:1;min-width:0;min-height:2.8em;line-height:1.4}   /* room for 2 lines: tips wrap, never cut */
+#msg{flex:1;min-width:0;min-height:2.8em;line-height:1.4;white-space:pre-wrap}   /* room for 2 lines: tips wrap, never cut */
 #msg::after{content:"";display:inline-block;width:.6em;height:1.05em;margin-left:.15ch;background:#fff;vertical-align:-.2em;animation:blink 1.06s steps(1) infinite}
 #stats{order:-1;flex:0 0 100%;color:#888}      /* counters always on their own line, above the tip */
 #stats b{color:#fff;font-weight:400}
 #msg.dyno{background:#fff;color:#000}
 @keyframes blink{50%{opacity:0}}
-#hint{position:absolute;left:0;right:0;top:18px;text-align:center;
-  font-size:13px;color:#888;transition:opacity .5s;pointer-events:none;padding:0 16px;z-index:5}
-#hint.gone{opacity:0}
 /* ---------- small screens ---------- */
 @media (max-width:820px){
   #bar{padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));font-size:12px}
@@ -164,10 +162,6 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
   #keys{gap:2px 8px}
   #prompt{display:none}
   #msg{min-height:4.2em}
-  #hint{font-size:12px;top:12px}
-}
-@media (max-width:820px) and (orientation:landscape){
-  #hint{display:none}                      /* no vertical room to spare */
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 
@@ -176,7 +170,7 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
   :root{--k:1}
   body{background:#fff;overflow:visible;display:block}
   #stage{position:static;display:block;perspective:none}
-  #shade,#bar,#hint{display:none}
+  #shade,#bar{display:none}
   #sheet{width:auto;height:auto;transform:none!important}
   .face{position:static;transform:none!important;box-shadow:none;padding:0;font-size:11pt;page-break-after:always}
   .face::after,[data-tip]::after,[data-tip]::before{display:none}

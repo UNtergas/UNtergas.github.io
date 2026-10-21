@@ -9,7 +9,7 @@ sign: Turn the page for projects and skills.
 
 ## About {text}
 
-Computer science and security engineer. Since 2025, full-stack TypeScript/Node.js developer on the central console of a {{ZTNA|Zero-trust network access: every request is authenticated and authorised, nothing is trusted for being inside the network.}} platform, the system our apps and our network depend on. Two developers, no tech lead, working directly with the CTO, so I take features from spec to production.
+Computer science and security engineer. Since 2025, full-stack TypeScript/Node.js developer on the central console of a {{ZTNA|Zero-trust network access: every request is authenticated and authorised, nothing is trusted for being inside the network.}} platform, the system our apps and our network depend on. Two developers, no tech lead, working directly with the CTO: I take features from spec to production on my own. I also go after problems nobody assigned: I found why our backend started slowly, wrote the case for the CTO, then did the Node.js upgrade.
 
 ## Experience
 

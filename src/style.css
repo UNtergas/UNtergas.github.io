@@ -65,12 +65,11 @@ h1{font-size:2.3em;line-height:1.05;font-weight:700;margin:0 0 .15em;letter-spac
 .meta a:hover,.meta a:focus-visible{background:var(--ink);color:var(--paper);outline:none}
 h2{font-size:.9em;font-weight:700;color:var(--ink);margin:0 0 .6em;
   text-transform:uppercase;letter-spacing:.04em}
-/* TUI rule: the section name, then a box-drawing line to the right edge */
-h2{display:flex;align-items:center;gap:1ch}
-h2::after{content:"────────────────────────────────────────────────────────────────────────────────────────────────────";
-  flex:1;min-width:0;overflow:hidden;white-space:nowrap;font-weight:400;letter-spacing:0}
-section > :not(h2){margin-left:1.6em}     /* man page: body indented under the section name */
-section{margin-bottom:1.6em}
+/* TUI pane: every section is a box, its name centred in the top border */
+section{position:relative;border:1px solid var(--ink);padding:1em 1.1em .7em;margin-top:.9em}
+section > h2{position:absolute;top:0;left:50%;transform:translate(-50%,-55%);margin:0;
+  background:var(--paper);padding:0 1ch;white-space:nowrap}
+section{margin-bottom:1em}
 section:last-child{margin-bottom:0}
 .entry{margin-bottom:1.15em}
 .entry:last-child{margin-bottom:0}
@@ -86,7 +85,7 @@ li::before{content:"*";position:absolute;left:-1.3em;color:var(--graphite)}
 .about{color:var(--ink)}
 /* back page: one-line title and tighter rhythm, so it fits with room at the bottom like the front */
 .back h1{font-size:2.4em}
-.back section{margin-bottom:1.15em}
+.back section{margin-bottom:.8em}
 .back section:last-child{margin-bottom:0}
 .back h2{margin-bottom:.6em}
 .back .entry{margin-bottom:.8em}

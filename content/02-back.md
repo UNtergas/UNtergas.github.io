@@ -1,5 +1,5 @@
 ---
-title: [Activities, "& skills"]
+title: ["Activities & skills"]
 role: What I build when nobody assigns it
 sign: Press P to print this sheet.
 ---
@@ -25,7 +25,8 @@ INSA Centre Val de Loire: 5th-year school project, planned for 2-3, done alone
 INSA Centre Val de Loire: school project, team of six
 
 - I split the tasks and gave everyone time to contribute. Three weeks before the deadline, I took the rest in hand and wrote {{about three quarters of the code|2,598 of about 3,413 lines in the final version, by git blame.}}.
-- In Python: A* pathfinding for roads and walkers, fire risk and water overlays, minimap, rendering. Code: [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
+- Simulation: A* pathfinding for roads and walkers, immigrants who find a plot and settle, prefecture, engineer and well buildings, fire risk and water overlays.
+- Engine: camera and minimap, rendering in layers tuned for frame rate, animations, game speed control. Python. Code: [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
 
 ## Education
 
@@ -44,10 +45,7 @@ INSA Centre Val de Loire
 - Testing: Vitest (TDD, end-to-end), k6 load testing
 - Build: Docker, GitLab CI, ESM, swc, esbuild, Node SEA, Grafana
 - AI: Claude Code (code from my specs, reviewed by diff)
-
-## Spoken {text}
-
-English, French, Vietnamese.
+- Spoken: English, French, Vietnamese
 
 ## Interest {grid}
 - Systems & simulation: relational Notion base for esports leagues>>auto-ranking formulas, linked player/team/nation pages

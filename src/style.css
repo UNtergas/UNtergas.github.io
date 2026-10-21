@@ -77,6 +77,15 @@ p,li{font-size:.95em;line-height:1.5;margin:0 0 .35em}
 ul{margin:0;padding-left:1.1em}
 li::marker{color:var(--graphite)}
 .about{color:#373B46}
+/* back page: one-line title and tighter rhythm, so it fits with room at the bottom like the front */
+.back h1{font-size:2.4em}
+.back section{margin-bottom:1.15em}
+.back section:last-child{margin-bottom:0}
+.back h2{margin-bottom:.6em}
+.back .entry{margin-bottom:.8em}
+.back .entry:last-child{margin-bottom:0}
+.back .where{margin:.05em 0 .25em}
+.back li{line-height:1.4}
 .grid{display:grid;grid-template-columns:auto 1fr;gap:.3em 1.1em;font-size:.93em;line-height:1.45}
 .grid b{font-weight:600;white-space:nowrap}
 .grid span{color:#373B46}

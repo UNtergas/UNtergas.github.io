@@ -450,7 +450,14 @@
       if (k < 1) requestAnimationFrame(step);
     })(t0);
   }
-  const focusEl = (el, zoom) => faceOn({ back: !!el.closest('.back'), zoom, done: () => centreOn(el) });
+  function focusEl(el, zoom){
+    const back = !!el.closest('.back');
+    /* already square on that face at that zoom (n / N between matches): just slide
+       there. Going through faceOn would pan back to the middle first. */
+    const off = ((st.ry + st.flip - (back ? 180 : 0)) % 360 + 540) % 360 - 180;
+    if (Math.abs(off) < 0.5 && Math.abs(st.rx) < 0.5 && Math.abs(st.zoom - zoom) < 0.05 * zoom) { centreOn(el); return; }
+    faceOn({ back, zoom, done: () => centreOn(el) });
+  }
 
   /* zoom until a whole section fills the stage, then flash its box */
   function showSection(sec){

@@ -590,6 +590,20 @@
   const filesNow = () => [...document.querySelectorAll('#keys a.download')]
     .map(a => ({ name: a.getAttribute('href').split('?')[0], a }));
   const later = (ms, fn) => setTimeout(fn, ms);
+  /* what a section holds: entries with their dates, grid labels, or the opening sentence */
+  function listSection(sec){
+    const entries = [...sec.querySelectorAll('.entry')];
+    if (entries.length) return entries.map(e => {
+      const when = (e.querySelector('.when') || {}).textContent || '';
+      return when.trim().padEnd(19) + e.querySelector('.entry-head strong').textContent.trim();
+    }).join('\n');
+    const labels = [...sec.querySelectorAll('.grid > b')].map(b => b.textContent.trim());
+    if (labels.length) return labels.join('  ');
+    const p = sec.querySelector('p');
+    if (!p) return '';
+    const text = p.textContent.trim(), first = (text.match(/^.*?[.!?](?=\s|$)/) || [text])[0];
+    return first + (first.length < text.length ? ' …' : '');
+  }
 
   const COMMANDS = {
     help: () =>
@@ -599,7 +613,18 @@
       const f = faceTitle();
       return `${f.querySelector('h1').textContent} · ${f.querySelector('.role').textContent}`;
     },
-    ls: () => sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  '),
+    ls: a => {
+      /* ls: where you are (cd), or a named section; ~ / .. list the top level */
+      const raw = (a.find(x => !x.startsWith('-')) || '').toLowerCase();
+      const target = !raw || /^\.\/?$/.test(raw) ? here
+        : /^(~|\.\.|\/)\/?$/.test(raw) ? ''
+        : raw.replace(/^(~\/|\.\.\/|\.\/)+/, '').replace(/\/$/, '');
+      if (!target) return sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  ');
+      const sec = sectionsNow().find(s => s.dataset.key === target);
+      if (sec) return listSection(sec);
+      if (filesNow().some(f => f.name.toLowerCase() === target)) return target;
+      return `ls: cannot access '${raw}': No such file or directory`;
+    },
     cd: a => {
       /* accepts experience, experience/, ./experience, ~/experience, ../experience */
       const raw = (a[0] || '').toLowerCase();
@@ -688,7 +713,7 @@
   function complete(){
     const parts = cmd.value.split(/\s+/), last = parts[parts.length - 1].toLowerCase();
     const pool = parts.length === 1 ? Object.keys(COMMANDS)
-      : parts[0] === 'cd' ? sectionsNow().map(s => s.dataset.key + '/').concat(here ? ['..'] : [])
+      : /^(cd|ls)$/.test(parts[0]) ? sectionsNow().map(s => s.dataset.key + '/').concat(here ? ['..'] : [])
       : parts[0] === 'open' ? filesNow().map(f => f.name)
       : parts[0] === 'lang' ? LANGS
       : parts[0] === 'man'  ? ['tuan'] : [];

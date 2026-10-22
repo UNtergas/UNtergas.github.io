@@ -310,9 +310,9 @@
   }
   /* a tip that holds an ASCII chart is typed out, so the bars grow */
   const BARS = /[█▁▂▃▄▅▆▇]/;
-  let sayId = 0, said = null;
+  let sayId = 0, said = null, kept = false;         /* kept: the line shows a command's output */
   function say(text, cls){
-    idling = false;
+    idling = false; kept = false;
     msg.className = cls || '';
     if (text === said) return;                       /* same tip re-hovered: don't restart */
     said = text;
@@ -609,6 +609,7 @@
     promptEl.textContent = m === 'search' ? '/' : ps1();
     cmd.value = '';
     cmd.focus();
+    if (m === 'shell' && kept) return;                /* back for another command: leave the last output up */
     say(m === 'search' ? 'type to highlight · enter to jump · esc to cancel'
                        : 'type help · tab completes · ↑ history · esc leaves');
   }
@@ -781,7 +782,7 @@
       if (!q) return 'usage: grep <word>';
       if (!find(q)) return `grep: no match for "${q}"`;
       closeLine();                                   /* hand the keys back, so n / N / esc work */
-      jump(1);
+      if (coarse) settle(() => jump(1)); else jump(1);   /* phones: once the keyboard is gone */
     },
     open: a => {
       const raw = (a[0] || '').toLowerCase();
@@ -834,7 +835,7 @@
     const out = !fn ? `${name}: command not found. try help`
       : asksHelp ? helpFor(name.toLowerCase())
       : fn(args);
-    if (out !== undefined) { said = null; say(out); }
+    if (out !== undefined) { said = null; say(out); kept = !!out; }
   }
 
   function complete(){
@@ -883,9 +884,9 @@
       const line = cmd.value;
       if (line.trim()) { hist.push(line); histAt = hist.length; }
       cmd.value = '';
-      /* phones: the keyboard goes away first, and the command runs once the page has its
-         full height back, so cd / ls / cat aim at the real stage, not the strip above the keys */
-      if (coarse) { closeLine(); settle(() => run(line)); } else run(line);
+      /* phones: cd puts the keyboard away first and runs once the page has its full height
+         back, so it aims at the real stage. Other commands keep the keyboard up for the next. */
+      if (coarse && /^:?cd$/i.test(line.trim().split(/\s+/)[0])) { closeLine(); settle(() => run(line)); } else run(line);
       return;
     }
     if (mode !== 'shell') return;

@@ -716,14 +716,18 @@
   }
 
   function complete(){
-    const parts = cmd.value.split(/\s+/), last = parts[parts.length - 1].toLowerCase();
+    const parts = cmd.value.split(/\s+/);
+    /* keep a path prefix (../, ~/, ./, /home/tuan/cv/) and complete the name after it */
+    const lastRaw = parts[parts.length - 1];
+    const prefix = parts.length > 1 ? (lastRaw.match(/^(~\/|\/home\/tuan\/cv\/|(\.\.?\/)+)/) || [''])[0] : '';
+    const last = lastRaw.slice(prefix.length).toLowerCase();
     const pool = parts.length === 1 ? Object.keys(COMMANDS)
       : /^(cd|ls)$/.test(parts[0]) ? sectionsNow().map(s => s.dataset.key + '/').concat(here ? ['..'] : [])
       : parts[0] === 'open' ? filesNow().map(f => f.name)
       : parts[0] === 'lang' ? LANGS
       : parts[0] === 'man'  ? ['tuan'] : [];
     const found = pool.filter(w => w.toLowerCase().startsWith(last));
-    if (found.length === 1) { parts[parts.length - 1] = found[0]; cmd.value = parts.join(' ') + ' '; }
+    if (found.length === 1) { parts[parts.length - 1] = prefix + found[0]; cmd.value = parts.join(' ') + ' '; }
     else if (found.length) { said = null; say(found.join('  ')); }
   }
 

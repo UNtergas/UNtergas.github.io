@@ -52,10 +52,10 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 |---|---|
 | `help` | list the commands |
 | `whoami` | name and role |
-| `ls` | sections and PDFs; inside a section (after `cd`), what it holds: entries with their dates, grid labels, or the opening sentence. `ls <section>` and `ls ..` work from anywhere. The view follows what is listed (the prompt stays put) |
+| `ls` | sections and PDFs; inside a section (after `cd`), its files: entries named after the role or project (with their dates), one file per skill / interest row, `profile.txt` for About. `ls <section>`, `ls ..` work anywhere, and the view follows what is listed (the prompt stays put) |
 | `cd <section>` | go into that section: the sheet turns and zooms onto it, its box flashes, and the prompt becomes `tuan@cv:~/experience$` (`experience`, `experience/`, `../skills`, `~/skills`, `/home/tuan/cv/skills` all work) |
 | `cd ..`, `cd ~`, `cd` | back to the whole page, laid flat (so does `0`) |
-| `cat <section>` | `Is a directory · try cd <section>`, like a real shell |
+| `cat <file>` | read one item: the sheet zooms onto it and the status line prints it (`cat full-stack-engineer` inside experience, `cat ~/skills/backend`, `cat ../projects/appius`, `cat about/profile.txt`); on a section: `Is a directory` |
 | `grep <word>` | same as `/` search |
 | `open <file.pdf>` | download a PDF (sections are directories: `open about` says to use `cd about`) |
 | `man tuan` | back to the front page |
@@ -64,6 +64,11 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 
 Plus the usual suspects (`pwd` shows the section you're in, `echo`, `date`, `uname`, `exit`, `rm`, `vim`), each with
 a one-line answer. Commands live in `COMMANDS` in `src/sheet.js`; add one by adding a key.
+
+The sheet works as a small filesystem: sections are directories, and their items are files.
+File names come from the sheet itself (role or project name before the first comma, or the
+row label), so the French sheet has French names (`ingenieur-full-stack`, `langages`).
+Tab completes commands, sections, and files inside a section (`cat skills/ba` → `skills/backend`).
 
 ## Languages
 

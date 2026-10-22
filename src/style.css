@@ -180,7 +180,7 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
 #status.typing #msg::after{content:none}
 mark.hit{background:none;color:inherit;outline:1px solid var(--ink);outline-offset:0}
 mark.hit.on{background:var(--ink);color:var(--paper)}
-section.flash{animation:flash .5s steps(1) 3}
+.flash{animation:flash .5s steps(1) 3}
 @keyframes flash{50%{outline:3px solid var(--ink);outline-offset:4px}}
 .face[hidden]{display:none}
 

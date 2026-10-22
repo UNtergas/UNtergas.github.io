@@ -460,10 +460,10 @@
   }
 
   /* zoom until a whole section fills the stage, then flash its box */
-  function showSection(sec){
+  function showSection(sec){                         /* any block: section, entry, grid row */
     const h1 = sec.offsetHeight / st.zoom, w1 = sec.offsetWidth / st.zoom;
     focusEl(sec, clamp(Math.min(0.9 * stage.clientHeight / h1, 0.95 * stage.clientWidth / w1), 1, 2.4));
-    sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash');
+    sheet.querySelectorAll('.flash').forEach(n => n.classList.remove('flash')); void sec.offsetWidth; sec.classList.add('flash');
   }
 
   /* ---- language ---- */
@@ -599,38 +599,75 @@
     return /^(~|\.\.|\.)?$/.test(p) ? '' : p;
   }
   /* what a section holds: entries with their dates, grid labels, or the opening sentence */
+  /* The sheet as a filesystem: sections are directories, and their items are files.
+     entries -> named after the role / project (text before the first comma)
+     grid rows -> named after the label;  a text section -> profile.txt */
+  const slug = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  function itemsOf(sec){
+    const items = [], seen = {};
+    const add = (base, it) => { let n = base || 'item'; if (seen[n]) n += '-' + (++seen[n]); else seen[n] = 1; items.push({ ...it, name: n }); };
+    for (const e of sec.querySelectorAll('.entry')) {
+      const role = e.querySelector('.entry-head strong').textContent.trim();
+      const where = (e.querySelector('.where') || {}).textContent || '';
+      const heads = [...e.querySelectorAll('li')].map(li => {
+        const b = li.querySelector('strong');
+        const t = (b ? b.textContent : li.textContent).trim().replace(/\.$/, '');
+        return '* ' + (t.length > 70 ? t.slice(0, 68) + '…' : t);
+      });
+      add(slug(role.split(',')[0]), { el: e, when: ((e.querySelector('.when') || {}).textContent || '').trim(),
+        text: [role, where.trim()].filter(Boolean).join(' · ') + (heads.length ? '\n' + heads.join('\n') : '') });
+    }
+    for (const b of sec.querySelectorAll('.grid > b'))
+      add(slug(b.textContent), { el: b, text: b.nextElementSibling.textContent.trim() });
+    if (!items.length) {
+      const p = sec.querySelector('p');
+      if (p) items.push({ name: 'profile.txt', el: p, text: p.textContent.trim() });
+    }
+    return items;
+  }
   function listSection(sec){
-    const entries = [...sec.querySelectorAll('.entry')];
-    if (entries.length) return entries.map(e => {
-      const when = (e.querySelector('.when') || {}).textContent || '';
-      return when.trim().padEnd(19) + e.querySelector('.entry-head strong').textContent.trim();
-    }).join('\n');
-    const labels = [...sec.querySelectorAll('.grid > b')].map(b => b.textContent.trim());
-    if (labels.length) return labels.join('  ');
-    const p = sec.querySelector('p');
-    if (!p) return '';
-    const text = p.textContent.trim(), first = (text.match(/^.*?[.!?](?=\s|$)/) || [text])[0];
-    return first + (first.length < text.length ? ' …' : '');
+    const items = itemsOf(sec);
+    const w = Math.max(...items.map(i => (i.when || '').length)) + 2;   /* date column fits the longest date */
+    return items.some(i => i.when)
+      ? items.map(i => i.when.padEnd(w) + i.name).join('\n')
+      : items.map(i => i.name).join('  ');
+  }
+  /* a resolved path ('skills', 'skills/backend', 'backend' inside skills, 'cv-en.pdf') */
+  function lookup(path){
+    const secs = sectionsNow(), [a, b] = path.split('/');
+    const secOf = k => secs.find(s => s.dataset.key === k);
+    if (b !== undefined) {
+      const sec = secOf(a);
+      if (!sec) return null;
+      const item = itemsOf(sec).find(i => i.name === b);
+      return item ? { sec, item } : null;
+    }
+    if (here) { const item = itemsOf(secOf(here)).find(i => i.name === a); if (item) return { sec: secOf(here), item }; }
+    if (secOf(a)) return { sec: secOf(a) };
+    const pdf = filesNow().find(f => f.name.toLowerCase() === a);
+    return pdf ? { pdf } : null;
   }
 
   const COMMANDS = {
     help: () =>
-      'whoami · ls · cd <section> · grep <word> · open <file> · man tuan\n' +
+      'whoami · ls · cd <section> · cat <file> · grep <word> · open <pdf> · man tuan\n' +
       'flip · lang <' + LANGS.join('|') + '> · contact · print · uptime · clear · exit',
     whoami: () => {
       const f = faceTitle();
       return `${f.querySelector('h1').textContent} · ${f.querySelector('.role').textContent}`;
     },
     ls: a => {
-      /* ls: where you are (cd), or a named section; ~ / .. list the top level */
+      /* ls: where you are (cd), or a named section; ~ / .. list the top level.
+         The view follows what is listed; where you are (the prompt) does not change. */
       const raw = (a.find(x => !x.startsWith('-')) || '').toLowerCase();
       const target = !raw || /^\.\/?$/.test(raw) ? here : resolve(raw);
-      /* the view follows what is listed; where you are (here, the prompt) does not change */
       if (!target) { if (raw) faceOn(); return sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  '); }
-      const sec = sectionsNow().find(s => s.dataset.key === target);
-      if (sec) { showSection(sec); return listSection(sec); }
-      if (filesNow().some(f => f.name.toLowerCase() === target)) return target;
-      return `ls: cannot access '${raw}': No such file or directory`;
+      const hit = lookup(target);
+      if (!hit) return `ls: cannot access '${raw}': No such file or directory`;
+      if (hit.item) { showSection(hit.item.el); return hit.item.name; }
+      if (hit.pdf) return hit.pdf.name;
+      showSection(hit.sec); return listSection(hit.sec);
     },
     cd: a => {
       /* accepts experience, experience/, ./experience, ~/experience, ../experience */
@@ -638,25 +675,28 @@
       if (/^\.\/?$/.test(raw)) return '';                   /* cd . : stay where you are */
       const name = resolve(raw);
       if (!name) { layFlat(); return ''; }
-      const sec = sectionsNow().find(s => s.dataset.key === name)
-               || sectionsNow().find(s => s.dataset.key.startsWith(name));
+      const hit = lookup(name);
+      const sec = hit ? (!hit.item && hit.sec)
+        : !name.includes('/') && sectionsNow().find(s => s.dataset.key.startsWith(name));
       if (sec) {
         showSection(sec);
         here = sec.dataset.key;
         promptEl.textContent = ps1();
-        return `${here}/ · on the sheet ↑ · cd .. to go back`;
+        return `${here}/ · on the sheet ↑ · ls to see inside · cd .. to go back`;
       }
-      if (filesNow().some(f => f.name.toLowerCase() === name)) return `cd: not a directory: ${name}`;
-      return `cd: no such file or directory: ${name}`;
+      if (hit) return `cd: not a directory: ${raw}`;
+      return `cd: no such file or directory: ${raw}`;
     },
     cat: a => {
-      const name = (a[0] || '').toLowerCase().replace(/^(~\/|\.\.\/|\.\/)+/, '').replace(/\/$/, '');
-      if (!name) return 'usage: cat <file> · sections are directories: try cd <section>';
-      const sec = sectionsNow().find(s => s.dataset.key === name);
-      if (sec) return `cat: ${name}/: Is a directory · try cd ${name}`;
-      const file = filesNow().find(f => f.name.toLowerCase() === name);
-      if (file) return `cat: ${name}: binary file, try open ${name}`;
-      return `cat: ${name}: no such file or directory. try ls`;
+      /* reads one item: zooms onto it on the sheet and prints it */
+      const raw = (a[0] || '').toLowerCase();
+      if (!raw) return 'usage: cat <file> · try ls, then cat one of its files';
+      const hit = lookup(resolve(raw));
+      if (!hit) return `cat: ${raw}: No such file or directory`;
+      if (hit.pdf) return `cat: ${hit.pdf.name}: binary file, try open ${hit.pdf.name}`;
+      if (!hit.item) return `cat: ${hit.sec.dataset.key}/: Is a directory · try ls ${hit.sec.dataset.key}`;
+      showSection(hit.item.el);
+      return hit.item.text;
     },
     grep: a => {
       const q = a.filter(x => !x.startsWith('-')).join(' ');
@@ -666,13 +706,13 @@
       jump(1);
     },
     open: a => {
-      const name = (a[0] || '').toLowerCase().replace(/\/$/, '');
-      if (!name) return 'usage: open <file.pdf> · try ls';
-      const file = filesNow().find(f => f.name.toLowerCase() === name);
-      if (file) { file.a.click(); return `opening ${file.name}…`; }
-      if (sectionsNow().some(s => s.dataset.key === name))
-        return `open: ${name}/: Is a directory · try cd ${name}`;
-      return `open: ${name}: no such file. try ls`;
+      const raw = (a[0] || '').toLowerCase();
+      if (!raw) return 'usage: open <file.pdf> · try ls';
+      const hit = lookup(resolve(raw));
+      if (hit && hit.pdf) { hit.pdf.a.click(); return `opening ${hit.pdf.name}…`; }
+      if (hit && hit.item) return `open: ${hit.item.name}: not a PDF · try cat ${raw}`;
+      if (hit) return `open: ${hit.sec.dataset.key}/: Is a directory · try cd ${hit.sec.dataset.key}`;
+      return `open: ${raw}: no such file. try ls`;
     },
     man: a => {
       if (!a.length) return 'What manual page do you want?\nFor example, try "man tuan".';
@@ -717,17 +757,27 @@
 
   function complete(){
     const parts = cmd.value.split(/\s+/);
-    /* keep a path prefix (../, ~/, ./, /home/tuan/cv/) and complete the name after it */
+    /* keep a path prefix (../, ~/, ./, /home/tuan/cv/) and complete the name after it;
+       inside a directory part (skills/ba…) complete that directory's files */
     const lastRaw = parts[parts.length - 1];
     const prefix = parts.length > 1 ? (lastRaw.match(/^(~\/|\/home\/tuan\/cv\/|(\.\.?\/)+)/) || [''])[0] : '';
     const last = lastRaw.slice(prefix.length).toLowerCase();
+    const dirs = sectionsNow().map(s => s.dataset.key + '/');
+    const filesIn = k => { const sec = sectionsNow().find(s => s.dataset.key === k); return sec ? itemsOf(sec).map(i => i.name) : []; };
+    const slash = last.indexOf('/');
+    const paths = slash >= 0 ? filesIn(last.slice(0, slash)).map(n => last.slice(0, slash) + '/' + n)
+      : dirs.concat(here && !prefix ? filesIn(here) : []);
     const pool = parts.length === 1 ? Object.keys(COMMANDS)
-      : /^(cd|ls)$/.test(parts[0]) ? sectionsNow().map(s => s.dataset.key + '/').concat(here ? ['..'] : [])
+      : parts[0] === 'cd' ? (slash >= 0 ? [] : dirs.concat(here ? ['..'] : []))
+      : /^(ls|cat|less|more)$/.test(parts[0]) ? paths
       : parts[0] === 'open' ? filesNow().map(f => f.name)
       : parts[0] === 'lang' ? LANGS
       : parts[0] === 'man'  ? ['tuan'] : [];
     const found = pool.filter(w => w.toLowerCase().startsWith(last));
-    if (found.length === 1) { parts[parts.length - 1] = prefix + found[0]; cmd.value = parts.join(' ') + ' '; }
+    if (found.length === 1) {
+      parts[parts.length - 1] = prefix + found[0];
+      cmd.value = parts.join(' ') + (found[0].endsWith('/') ? '' : ' ');   /* a directory: keep typing into it */
+    }
     else if (found.length) { said = null; say(found.join('  ')); }
   }
 

@@ -323,11 +323,19 @@
      jumping hold to hold, zig-zag, and tops out. Drawn in #climber, an overlay,
      so the layout never moves. */
   const climber = document.getElementById('climber');
+  /* Poses, by the side of the hold the hand is on (or reaching for): L = screen left.
+     One arm only goes to the hold; the leg on the other side kicks out to balance. */
   const FIG = {
-    hang:   ['\\o/', ' | ', '/ \\'],
-    crouch: [' o ', '/|\\', '< >'],
-    fly:    ['\\o/', ' | ', '/ \\'],
-    top:    [' o  ', '/|\\ ', '/ \\ '],
+    hangL:   ['\\o ', ' |\\', '/ \\'],     /* hand on a left hold, other arm hangs */
+    hangR:   [' o/', '/| ', '/ \\'],
+    crouchL: ['\\o ', ' |\\', '> >'],      /* same, legs coiled for the jump */
+    crouchR: [' o/', '/| ', '< <'],
+    flyL:    ['\\o ', ' | ', ' |\\'],      /* reaching left, right leg kicked out */
+    flyR:    [' o/', ' | ', '/| '],
+    cheerL:  ['\\o/', ' | ', '/ \\'],      /* top hold on the left, right arm waves… */
+    cheerL2: ['\\o_', ' | ', '/ \\'],
+    cheerR:  ['\\o/', ' | ', '/ \\'],      /* …or on the right, left arm waves */
+    cheerR2: ['_o/', ' | ', '/ \\'],
   };
   const WALL = 17;                                       /* wall width in characters */
   function wallFrame(rows, holds, fig, r, c, flag){
@@ -337,7 +345,7 @@
       const y = r + i, x = c + j;
       if (ch !== ' ' && y >= 0 && y < rows && x >= 0 && x < WALL) g[y][x] = ch;
     }));
-    if (flag) ['TOP!', '|'].forEach((t, i) => [...t].forEach((ch, j) => { g[i][WALL - 5 + j] = ch; }));
+    if (flag) [...'TOP!'].forEach((ch, j) => { g[0][flag + j] = ch; });
     return g.map(l => '│' + l.join('') + '│').join('\n');
   }
   let climbId = 0;
@@ -346,30 +354,37 @@
     const lh = parseFloat(getComputedStyle(climber).fontSize) * 1.15;
     const rows = Math.max(12, Math.floor((stage.clientHeight - 40) / lh));
     const holds = [];
-    const HOLDS = 8, gap = (rows - 5) / (HOLDS - 1);   /* always 8 holds, spread over the full height */
+    const HOLDS = 8, gap = (rows - 6) / (HOLDS - 1);   /* always 8 holds, spread over the full height */
     for (let i = 0; i < HOLDS; i++) holds.push([Math.round(rows - 4 - i * gap), i % 2 ? WALL - 3 : 2]);
+    /* where the figure sits so its hand is right under hold i */
+    const side = ([, c]) => (c < WALL / 2 ? 'L' : 'R');
+    const at = h => [h[0] + 1, side(h) === 'L' ? h[1] : h[1] - 2];
     const frames = [];                                    /* [fig, row, col, ms] */
-    holds.forEach(([r, c], i) => {
-      frames.push(['hang', r + 1, c - 1, 110]);
-      const next = holds[i + 1];
+    holds.forEach((h, i) => {
+      const [r, c] = at(h), s = side(h), next = holds[i + 1];
+      frames.push(['hang' + s, r, c, 110]);
       if (!next) return;
-      frames.push(['crouch', r + 1, c - 1, 60]);
+      frames.push(['crouch' + s, r, c, 60]);
+      const [r2, c2] = at(next);
       for (let k = 1; k <= 3; k++)
-        frames.push(['fly', Math.round(r + 1 + (next[0] - r) * k / 4), Math.round(c - 1 + (next[1] - c) * k / 4), 40]);
+        frames.push(['fly' + side(next), Math.round(r + (r2 - r) * k / 4), Math.round(c + (c2 - c) * k / 4), 40]);
     });
+    /* top: one hand on the last hold, the other waves */
+    const last = holds[holds.length - 1], [lr, lc] = at(last), ls = side(last);
+    const flagAt = ls === 'L' ? WALL - 5 : 1;            /* TOP! on the other side of the wall */
+    for (let k = 0; k < 6; k++) frames.push([k % 2 ? 'cheer' + ls + '2' : 'cheer' + ls, lr, lc, 170, flagAt]);
     climber.classList.add('on');
     let i = 0, hold = 0;
     (function next(){
       if (id !== climbId) return;
       if (i < frames.length) {
-        const [fig, r, c, ms] = frames[i++];
-        if (fig === 'hang') say(`dyno… hold ${++hold}/${holds.length}`, 'dyno');
-        climber.textContent = wallFrame(rows, holds, fig, r, c);
+        const [fig, r, c, ms, flag] = frames[i++];
+        if (fig.startsWith('hang')) say(`dyno… hold ${++hold}/${holds.length}`, 'dyno');
+        if (fig.startsWith('cheer') && !said.startsWith('dyno!')) say('dyno! topped out.', 'dyno');
+        climber.textContent = wallFrame(rows, holds, fig, r, c, flag);
         setTimeout(next, ms);
       } else {
-        climber.textContent = wallFrame(rows, holds, 'top', 0, 1, true);
-        say('dyno! topped out.', 'dyno');
-        setTimeout(() => { if (id === climbId) { climber.classList.remove('on'); idle(); } }, 1800);
+        setTimeout(() => { if (id === climbId) { climber.classList.remove('on'); idle(); } }, 900);
       }
     })();
   }

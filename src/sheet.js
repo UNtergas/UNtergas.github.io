@@ -24,13 +24,18 @@
   const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
 
   /* how big the sheet is when "laid flat": fills the stage, never the bar */
+  /* sheet size at k = 1 comes from CSS (--sw, --sh): A4 on desktop, long and narrow on phones */
+  let SW = 720, SH = 1018;
   function measure(){
+    const cs = getComputedStyle(root);
+    SW = parseFloat(cs.getPropertyValue('--sw')) || 720;
+    SH = parseFloat(cs.getPropertyValue('--sh')) || 1018;
     const w = stage.clientWidth, h = stage.clientHeight;
-    base = Math.max(0.2, Math.min(w * 0.9 / 720, h * 0.94 / 1018));
+    base = Math.max(0.2, Math.min(w * 0.9 / SW, h * 0.94 / SH));
   }
 
   /* Pan bounds are measured, not predicted: the sheet is tilted inside a
-     perspective, so its projected box is not 720x1018 * k. Measure where it
+     perspective, so its projected box is not SW x SH * k. Measure where it
      actually landed, then pull it back only if an edge came off the stage. */
   const EDGE = 40;                       /* paper may pass the stage edge by this much */
 
@@ -69,7 +74,7 @@
     correctPan();
     const facing = Math.abs(Math.cos(ry * Math.PI / 180));
     shade.style.transform =
-      `translate(${st.px}px, ${st.py + 300*k}px) scaleX(${(0.25+0.75*facing)*k}) scaleY(${k})`;
+      `translate(${st.px}px, ${st.py + SH * 0.295 * k}px) scaleX(${(0.25+0.75*facing)*k*SW/720}) scaleY(${k})`;
     shade.style.opacity = 0.22 + 0.33 * facing;
   }
 

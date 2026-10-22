@@ -5,6 +5,8 @@
   --fold:#000;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
   --k:1;                                   /* one scale knob: fit x zoom */
+  /* sheet size and margins in px at k = 1: A4 on desktop */
+  --sw:720; --sh:1018; --mt:74; --mx:84; --mb:112;
   box-sizing:border-box;
 }
 *,*::before,*::after{box-sizing:inherit}
@@ -38,8 +40,8 @@ body{
 /* size is layout, not transform — so type re-renders sharp at every zoom step */
 #sheet{
   position:relative;
-  width:calc(720px * var(--k));
-  height:calc(1018px * var(--k));
+  width:calc(var(--sw) * 1px * var(--k));
+  height:calc(var(--sh) * 1px * var(--k));
   transform-style:preserve-3d;
 }
 .face{
@@ -47,7 +49,7 @@ body{
   backface-visibility:hidden;transform-style:preserve-3d;
   background:var(--paper);color:var(--ink);
   font-size:calc(var(--fs,16px) * var(--k));
-  padding:calc(74px * var(--k)) calc(84px * var(--k)) calc(112px * var(--k));
+  padding:calc(var(--mt) * 1px * var(--k)) calc(var(--mx) * 1px * var(--k)) calc(var(--mb) * 1px * var(--k));
   box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 40px 90px rgba(0,0,0,.6);
 }
 .face::after{content:none}
@@ -99,9 +101,9 @@ a.link{color:inherit;text-decoration:underline;text-underline-offset:2px}
 a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-decoration:none;outline:none}
 
 /* footers live in the reserved bottom band, never against the paper edge */
-.page-no{position:absolute;left:calc(84px * var(--k));bottom:calc(52px * var(--k));
+.page-no{position:absolute;left:calc(var(--mx) * 1px * var(--k));bottom:calc(52px * var(--k));
   font-size:.82em;color:var(--graphite)}
-.sign{position:absolute;right:calc(84px * var(--k));bottom:calc(52px * var(--k));
+.sign{position:absolute;right:calc(var(--mx) * 1px * var(--k));bottom:calc(52px * var(--k));
   font-size:.82em;color:var(--graphite);font-style:italic}
 .stamp{position:absolute;top:calc(56px * var(--k));right:calc(58px * var(--k));
   width:7.2em;height:7.2em;border:2px solid var(--accent);border-radius:50%;
@@ -112,7 +114,7 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
 [data-tip]::after,[data-tip]::before{content:none}
 .term{border-bottom:1px dotted var(--ink);cursor:help}
 .term:hover,.term:focus-visible,.term.tip-on,[data-tip].tip-on{background:var(--ink);color:var(--paper);border-color:transparent;outline:none}
-.man-head{position:absolute;left:calc(84px * var(--k));right:calc(84px * var(--k));top:calc(42px * var(--k));
+.man-head{position:absolute;left:calc(var(--mx) * 1px * var(--k));right:calc(var(--mx) * 1px * var(--k));top:calc(42px * var(--k));
   display:flex;justify-content:space-between;margin:0;font-size:.78em;font-weight:700;color:var(--ink)}
 .man-head span:nth-child(2){font-weight:400;color:var(--graphite)}
 
@@ -176,12 +178,20 @@ section.flash{animation:flash .5s steps(1) 3}
 .face[hidden]{display:none}
 
 /* ---------- ASCII portrait, right after the name ---------- */
-.namerow{display:flex;align-items:center;gap:1.4em}
+.namerow{display:flex;align-items:center;justify-content:space-between;gap:1.4em}
 .who{min-width:0}
 .avatar{margin:0;font-family:var(--mono);font-size:.25em;line-height:1;letter-spacing:0;color:var(--ink);
   white-space:pre;cursor:help;flex:none}
 .avatar:hover,.avatar:focus-visible,.avatar.tip-on{background:none;color:var(--ink);outline:none}
 /* ---------- small screens ---------- */
+/* Phones: a long, narrow sheet (about the same area as A4). The text column is
+   narrower, so zoomed to the screen width the type is about half again bigger,
+   and you read by panning down. */
+@media (max-width:600px){
+  :root{--sw:480; --sh:1500; --mt:66; --mx:34; --mb:100}
+}
+/* iOS zooms the page into any focused field under 16px */
+@media (hover:none){ #cmd{font-size:16px} }
 @media (max-width:820px){
   #bar{padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));font-size:12px}
   .btn{font-size:12px;padding:6px 4px}

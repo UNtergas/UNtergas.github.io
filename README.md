@@ -18,7 +18,6 @@ No dependencies, no bundler, no framework. One font: JetBrains Mono.
 | Scroll, pinch, `+` / `-` | zoom, anchored under the cursor |
 | Arrow keys | turn (when zoomed in: pan) |
 | `f`, Space, double-click | flip to the other face |
-| `f` `f` (twice within 0.7 s) | **dyno**: a 720° spin while an ASCII climber jumps between two holds |
 | `0`, or the window's zoom box | lay flat: face on, back to the fitted size |
 | `c` | contact (opens the mail app) |
 | `/` | search the sheet, like in `man`: matches highlight as you type, Enter jumps |
@@ -30,6 +29,14 @@ No dependencies, no bundler, no framework. One font: JetBrains Mono.
 | `Esc` | clear the tip and the search |
 
 Browser shortcuts (Ctrl/Cmd + anything) are left alone.
+
+The status line's default text says it is a command line (press `:`); other tips
+alternate with it.
+
+**Easter egg, not advertised on the page:** `f` `f` (twice within 0.7 s), or flinging the sheet
+a full turn inside a second, is a **dyno**: the sheet spins 720° while an ASCII climber goes up
+a wall as tall as the screen, hold to hold, and tops out. The `dyno` command does it too,
+but `help` doesn't list it.
 
 The status line also counts flips and dynos (kept in `localStorage`). They count what the
 sheet does, not which key was pressed: every time the other face comes round is a flip
@@ -45,13 +52,13 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 |---|---|
 | `help` | list the commands |
 | `whoami` | name and role |
-| `ls` | sections, PDFs, the portrait |
+| `ls` | sections and PDFs |
 | `cat <section>` | zoom onto that section and flash its box (`less`, `more` too) |
 | `grep <word>` | same as `/` search |
-| `open <file\|section>` | download a PDF, or show a section like `cat`; `open portrait` brings the photo back |
+| `open <file.pdf>` | download a PDF (sections are not files: `open about` says to use `cat about`) |
 | `man tuan` | back to the front page |
 | `top` | the console's CPU, live, before and after the incident fix |
-| `flip`, `dyno`, `lang en\|fr`, `contact`, `print`, `uptime`, `clear` | what they say |
+| `flip`, `lang en\|fr`, `contact`, `print`, `uptime`, `clear` | what they say |
 | `sudo hire tuan` | try it |
 
 Plus the usual suspects (`pwd`, `cd`, `echo`, `date`, `uname`, `exit`, `rm`, `vim`), each with
@@ -72,11 +79,12 @@ Every language is built into the page; only one is shown and measured at a time.
 
 ## Portrait
 
-Set `"portrait": "portrait.jpg"` in `content/site.json` and put the photo in `content/`.
-The browser dithers it to 1 bit with Atkinson's kernel (the one MacPaint used) and shows it
-in a small `tuan.pict` window left of the sheet, on screens wider than 1180px.
-Any photo works; a well-lit face on a plain background dithers best.
-If the file is missing, the window is left out and the build log says so.
+`"portrait": "portrait.txt"` in `content/site.json` points at a plain-text ASCII picture in
+`content/`. It is printed right after the name on the front page, small (a quarter of the
+body size), so it reads as a picture at normal zoom and as characters up close.
+`portraitTip` / `portraitTipFr` set its status-line tip. Today it is the GitHub avatar
+(the goose), drawn as outline `#`, fill `:`, beak and feet `%`, knife `=`, eye `@`.
+Any text file works; keep it near 36×25 characters so the header doesn't grow.
 
 ## Edit
 
@@ -90,8 +98,8 @@ If the file is missing, the window is left out and the build log says so.
 | Link preview image (1200×630) | `content/og.png` |
 | Colours, type, spacing, window frame | `src/style.css` |
 | French sheet | `content/fr/01-front.md`, `content/fr/02-back.md` |
-| Portrait photo | `content/site.json` → `portrait` + the image in `content/` |
-| Spin / zoom / flip, key bar, status line, dyno, shell, search | `src/sheet.js` |
+| ASCII portrait next to the name | `content/portrait.txt` (+ `portrait` in `content/site.json`) |
+| Spin / zoom / flip, key bar, status line, shell, search, the dyno | `src/sheet.js` |
 | HTML shell, key bar buttons, meta tags | `src/template.html` |
 | Markdown → HTML | `src/build.mjs` |
 
@@ -165,8 +173,8 @@ Tips can hold small ASCII charts, which read well in the monospace status line:
   ],
   "man": ["TUAN(1)", "Curriculum Vitae"],
   "uptime": { "since": "2025-02", "until": "", "label": "snowpack" },
-  "portrait": "portrait.jpg",
-  "portraitAlt": "Nguyen Anh Tuan"
+  "portrait": "portrait.txt",
+  "portraitTip": "Honk. My GitHub avatar, in ASCII."
 }
 ```
 

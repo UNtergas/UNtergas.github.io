@@ -126,7 +126,7 @@ const renderSection = s => {
 };
 
 /* ---------- page -> one face of the sheet ---------- */
-function renderPage(page, i, total, site, lang){
+function renderPage(page, i, total, site, lang, avatar){
   const tipOf = c => (lang !== 'en' && c['tip' + lang[0].toUpperCase() + lang.slice(1)]) || c.tip;
   const { meta, sections } = page;
   const titleLines = [].concat(meta.title || 'Untitled').map(esc).join('<br>');
@@ -148,8 +148,10 @@ function renderPage(page, i, total, site, lang){
       ${man}
       ${stamp}
       <div class="body">
-        <h1>${titleLines}</h1>
-        ${meta.role ? `<p class="role">${inline(meta.role)}</p>` : ''}
+        <div class="namerow"><div class="who">
+          <h1>${titleLines}</h1>
+          ${meta.role ? `<p class="role">${inline(meta.role)}</p>` : ''}
+        </div>${i === 0 && avatar ? `<pre class="avatar" tabindex="0" aria-hidden="true"${tipOf({ tip: site.portraitTip, tipFr: site.portraitTipFr }) ? ` data-tip="${esc(tipOf({ tip: site.portraitTip, tipFr: site.portraitTipFr }))}"` : ''}>${esc(avatar)}</pre>` : ''}</div>
         ${contact}
         ${sections.map(s => `<section data-key="${esc(s.key)}"><h2>${esc(s.heading)}</h2>${renderSection(s)}</section>`).join('')}
       </div>
@@ -175,9 +177,10 @@ function build(){
     if (pages.length > 2)
       console.warn(`! ${lang}: ${pages.length} pages found, a sheet has 2 faces. Ignored: ${pages.slice(2).map(p => p.file).join(', ')}`);
 
-  /* optional photo, dithered in the browser into a 1-bit window */
-  const portrait = site.portrait && existsSync(join(CONTENT, site.portrait)) ? site.portrait : '';
-  if (site.portrait && !portrait) console.warn(`! missing content/${site.portrait} — portrait not rendered`);
+  /* optional ASCII portrait (a text file), printed next to the name on the front */
+  const avatar = site.portrait && existsSync(join(CONTENT, site.portrait))
+    ? readFileSync(join(CONTENT, site.portrait), 'utf8').replace(/\s+$/, '') : '';
+  if (site.portrait && !avatar) console.warn(`! missing content/${site.portrait} — portrait not rendered`);
 
   /* download buttons point at PDFs living in content/, never at the 3D page */
   const downloads = (site.downloads || []).filter(d => {
@@ -204,18 +207,15 @@ function build(){
     .replace('__LANGS__',     esc(Object.keys(langs).join(' ')))
     .replace('__LANG_BTN__',  Object.keys(langs).length > 1
       ? `  <button class="btn" id="lang"><kbd>l</kbd><span>${esc(Object.keys(langs)[1].toUpperCase())}</span></button>` : '')
-    .replace('__PORTRAIT__',  portrait
-      ? `<figure id="portrait" aria-label="${esc(site.portraitAlt || 'Portrait')}"><div class="titlebar"><span class="box close"></span><span class="wtitle">tuan.pict</span></div><canvas data-src="${esc(portrait)}"></canvas></figure>` : '')
     .replace('__PAGES__',     Object.entries(langs).map(([lang, pages]) =>
-      pages.slice(0, 2).map((p, i) => renderPage(p, i, Math.min(pages.length, 2), site, lang)).join('\n')).join('\n'));
+      pages.slice(0, 2).map((p, i) => renderPage(p, i, Math.min(pages.length, 2), site, lang, avatar)).join('\n')).join('\n'));
 
   mkdirSync(DIST, { recursive: true });
   writeFileSync(join(DIST, 'index.html'), html);
 
   /* copy every PDF plus the optional extras */
   const assets = readdirSync(CONTENT).filter(f => f.endsWith('.pdf'))
-    .concat(['og.png', 'CNAME'].filter(f => existsSync(join(CONTENT, f))))
-    .concat(portrait ? [portrait] : []);
+    .concat(['og.png', 'CNAME'].filter(f => existsSync(join(CONTENT, f))));
   for (const a of assets) copyFileSync(join(CONTENT, a), join(DIST, a));
 
   console.log(`built dist/index.html — ${Object.entries(langs).map(([l, p]) => `${l}: ${p.length}`).join(', ')} page(s), ${downloads.length} download(s), ${(html.length/1024).toFixed(1)} kB`);

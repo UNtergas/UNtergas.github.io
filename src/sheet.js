@@ -197,26 +197,32 @@
   /* ---- status line: tooltips, counters, uptime ---- */
   const msg = document.getElementById('msg'), stats = document.getElementById('stats');
   /* idle hints rotate in the status line (they used to float over the paper) */
+  /* the default line says it's a command line; every other tick shows another tip.
+     [f][f] (dyno) is deliberately not advertised: it's an easter egg. */
+  const CMD_HINT = {
+    en: 'this is a command line · press : then type help, ls, cat skills, top…',
+    fr: 'ceci est une ligne de commande · appuyez sur : puis tapez help, ls, cat skills, top…',
+  };
   const IDLES = {
     en: [
       'drag to turn · scroll or pinch to zoom · [f] flip',
       'hover a dotted word or a number for details',
-      'press : to type a command · try :help',
-      'press [f] twice, fast: dyno',
       '[/] searches the sheet, like in man',
       '[c] to write to me · ↓ to download the CV',
     ],
     fr: [
       'glisser pour tourner · molette ou pincer pour zoomer · [f] retourner',
       'survolez un mot pointillé ou un chiffre pour le détail',
-      'appuyez sur : pour taper une commande · essayez :help',
-      'appuyez deux fois vite sur [f] : dyno',
       '[/] cherche dans la feuille, comme dans man',
       "[c] pour m'écrire · ↓ pour télécharger le CV",
     ],
   };
   let idleAt = 0, idling = true;
-  const idle = () => { const l = IDLES[lang] || IDLES.en; say(l[idleAt % l.length]); idling = true; };
+  const idle = () => {
+    const l = IDLES[lang] || IDLES.en;
+    say(idleAt % 2 ? l[(idleAt >> 1) % l.length] : CMD_HINT[lang] || CMD_HINT.en);
+    idling = true;
+  };
   const store = {
     get(k){ try { return +localStorage.getItem(k) || 0; } catch { return 0; } },
     bump(k){ const v = this.get(k) + 1; try { localStorage.setItem(k, v); } catch {} return v; },
@@ -313,30 +319,56 @@
       if (k < 1) requestAnimationFrame(step); else anim = null;
     })(t0);
   }
-  /* one-line ASCII climber: launches off the left hold, catches the right one */
-  /* ASCII climber (head, body, legs) leaps from the left hold to the right one.
-     Drawn in #climber, an overlay above the bar, so the layout never moves. */
+  /* Easter egg: the dyno. An ASCII climber goes up a wall as tall as the stage,
+     jumping hold to hold, zig-zag, and tops out. Drawn in #climber, an overlay,
+     so the layout never moves. */
   const climber = document.getElementById('climber');
   const FIG = {
-    hang:  [' o ', '/|\\', '/ \\'],
-    leap:  ['\\o/', ' | ', '/ \\'],
-    catch: [' o/', '/| ', '/ \\'],
+    hang:   ['\\o/', ' | ', '/ \\'],
+    crouch: [' o ', '/|\\', '< >'],
+    fly:    ['\\o/', ' | ', '/ \\'],
+    top:    [' o  ', '/|\\ ', '/ \\ '],
   };
-  const W = 15;                                       /* gap between the two holds */
-  const frame = (fig, x) => FIG[fig].map((l, i) => {
-    const row = (' '.repeat(x) + l).padEnd(W);
-    return i === 0 ? '▮' + row + '▮' : ' ' + row + ' ';
-  }).join('\n');
-  const STEPS = [['hang', 0], ['leap', 3], ['leap', 6], ['leap', 9], ['catch', 12]];
+  const WALL = 17;                                       /* wall width in characters */
+  function wallFrame(rows, holds, fig, r, c, flag){
+    const g = Array.from({ length: rows }, () => Array(WALL).fill(' '));
+    for (const [hr, hc] of holds) if (hr >= 0 && hr < rows) g[hr][hc] = '●';
+    FIG[fig].forEach((line, i) => [...line].forEach((ch, j) => {
+      const y = r + i, x = c + j;
+      if (ch !== ' ' && y >= 0 && y < rows && x >= 0 && x < WALL) g[y][x] = ch;
+    }));
+    if (flag) ['TOP!', '|'].forEach((t, i) => [...t].forEach((ch, j) => { g[i][WALL - 5 + j] = ch; }));
+    return g.map(l => '│' + l.join('') + '│').join('\n');
+  }
+  let climbId = 0;
   function climb(){
-    let i = 0;
+    const id = ++climbId;
+    const lh = parseFloat(getComputedStyle(climber).fontSize) * 1.15;
+    const rows = Math.max(12, Math.floor((stage.clientHeight - 40) / lh));
+    const holds = [];
+    for (let r = rows - 4, i = 0; r >= 1; r -= 6, i++) holds.push([r, i % 2 ? WALL - 3 : 2]);
+    const frames = [];                                    /* [fig, row, col, ms] */
+    holds.forEach(([r, c], i) => {
+      frames.push(['hang', r + 1, c - 1, 260]);
+      const next = holds[i + 1];
+      if (!next) return;
+      frames.push(['crouch', r + 1, c - 1, 140]);
+      for (let k = 1; k <= 3; k++)
+        frames.push(['fly', Math.round(r + 1 + (next[0] - r) * k / 4), Math.round(c - 1 + (next[1] - c) * k / 4), 80]);
+    });
     climber.classList.add('on');
-    say('dyno…', 'dyno');
+    let i = 0, hold = 0;
     (function next(){
-      if (i < STEPS.length) { climber.textContent = frame(...STEPS[i++]); setTimeout(next, 190); }
-      else {
-        say('dyno! caught the hold.', 'dyno');
-        setTimeout(() => { climber.classList.remove('on'); idle(); }, 2200);
+      if (id !== climbId) return;
+      if (i < frames.length) {
+        const [fig, r, c, ms] = frames[i++];
+        if (fig === 'hang') say(`dyno… hold ${++hold}/${holds.length}`, 'dyno');
+        climber.textContent = wallFrame(rows, holds, fig, r, c);
+        setTimeout(next, ms);
+      } else {
+        climber.textContent = wallFrame(rows, holds, 'top', 0, 1, true);
+        say('dyno! topped out.', 'dyno');
+        setTimeout(() => { if (id === climbId) { climber.classList.remove('on'); idle(); } }, 2400);
       }
     })();
   }
@@ -462,16 +494,13 @@
   /* ---- contact, window boxes ---- */
   const contact = document.getElementById('contact');
   contact.addEventListener('click', () => say('opening your mail app…'));
-  const portrait = document.getElementById('portrait');
   stage.addEventListener('click', e => {
     if (moved > 5) return;
-    if (e.target.closest('#portrait .box.close')) { portrait.hidden = true; say('portrait closed. type `open portrait` to bring it back'); return; }
     if (e.target.closest('.box.close')) say("a CV can't be closed. try [c] to write to me");
     if (e.target.closest('.box.zoom')) layFlat();
   });
 
   document.getElementById('flip').onclick = flip;
-  document.getElementById('dyno').onclick = () => { flip(); setTimeout(flip, 120); };
   document.getElementById('reset').onclick = layFlat;
   stage.addEventListener('dblclick', flip);
 
@@ -524,13 +553,12 @@
   const COMMANDS = {
     help: () =>
       'whoami · ls · cat <section> · grep <word> · open <file> · man tuan · top\n' +
-      'flip · dyno · lang <' + LANGS.join('|') + '> · contact · print · uptime · clear · exit',
+      'flip · lang <' + LANGS.join('|') + '> · contact · print · uptime · clear · exit',
     whoami: () => {
       const f = faceTitle();
       return `${f.querySelector('h1').textContent} · ${f.querySelector('.role').textContent}`;
     },
-    ls: () => sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name),
-      portrait ? ['portrait.pict'] : []).join('  '),
+    ls: () => sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  '),
     cat: a => {
       const name = (a[0] || '').replace(/\/$/, '').toLowerCase();
       if (!name) return 'cat: which one? try ls';
@@ -548,13 +576,13 @@
       jump(1);
     },
     open: a => {
-      const name = (a[0] || '').toLowerCase();
-      if (/^portrait/.test(name) && portrait) { portrait.hidden = false; return 'portrait: 1-bit, Atkinson dithered, like MacPaint'; }
+      const name = (a[0] || '').toLowerCase().replace(/\/$/, '');
+      if (!name) return 'usage: open <file.pdf> · try ls';
       const file = filesNow().find(f => f.name.toLowerCase() === name);
-      if (!file && name) return COMMANDS.cat([name]).replace(/^cat:/, 'open:');   /* a section: same as cat */
-      if (!file) return 'open: what? try ls';
-      file.a.click();
-      return `opening ${file.name}…`;
+      if (file) { file.a.click(); return `opening ${file.name}…`; }
+      if (sectionsNow().some(s => s.dataset.key === name))
+        return `open: ${name}: not a file, it's a section. use cat ${name}`;
+      return `open: ${name}: no such file. try ls`;
     },
     man: a => {
       if (!a.length) return 'What manual page do you want?\nFor example, try "man tuan".';
@@ -603,7 +631,7 @@
     const parts = cmd.value.split(/\s+/), last = parts[parts.length - 1].toLowerCase();
     const pool = parts.length === 1 ? Object.keys(COMMANDS)
       : /^(cat|less|more)$/.test(parts[0]) ? sectionsNow().map(s => s.dataset.key)
-      : parts[0] === 'open' ? sectionsNow().map(s => s.dataset.key).concat(filesNow().map(f => f.name), portrait ? ['portrait'] : [])
+      : parts[0] === 'open' ? filesNow().map(f => f.name)
       : parts[0] === 'lang' ? LANGS
       : parts[0] === 'man'  ? ['tuan'] : [];
     const found = pool.filter(w => w.toLowerCase().startsWith(last));
@@ -664,35 +692,5 @@
       ? 'pour taper une commande, appuyez d’abord sur :  · essayez :help'
       : 'to type a command, press : first · try :help'); }
   });
-
-  /* ---- portrait: any photo, dithered to 1 bit with Atkinson's kernel (MacPaint's) ---- */
-  const canvas = portrait && portrait.querySelector('canvas');
-  if (canvas) {
-    const img = new Image();
-    img.onload = () => {
-      const w = 112, h = Math.round(img.height * w / img.width);
-      canvas.width = w; canvas.height = h;
-      const c = canvas.getContext('2d');
-      c.drawImage(img, 0, 0, w, h);
-      let d;
-      try { d = c.getImageData(0, 0, w, h); }
-      catch { portrait.classList.add('ready', 'raw'); return; }   /* opened from file://: canvas is tainted */
-      const px = d.data, g = new Float32Array(w * h);
-      for (let i = 0; i < w * h; i++) g[i] = 0.299 * px[i*4] + 0.587 * px[i*4+1] + 0.114 * px[i*4+2];
-      const SPREAD = [[1,0],[2,0],[-1,1],[0,1],[1,1],[0,2]];   /* 6/8 of the error: Atkinson */
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        const i = y * w + x, old = g[i], v = old < 128 ? 0 : 255, err = (old - v) / 8;
-        g[i] = v;
-        for (const [dx, dy] of SPREAD) {
-          const xx = x + dx, yy = y + dy;
-          if (xx >= 0 && xx < w && yy < h) g[yy * w + xx] += err;
-        }
-      }
-      for (let i = 0; i < w * h; i++) { px[i*4] = px[i*4+1] = px[i*4+2] = g[i]; px[i*4+3] = 255; }
-      c.putImageData(d, 0, 0);
-      portrait.classList.add('ready');
-    };
-    img.src = canvas.dataset.src;
-  }
 
 })();

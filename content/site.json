@@ -45,6 +45,7 @@
     "until": "",
     "label": "snowpack"
   },
-  "portrait": "portrait.jpg",
-  "portraitAlt": "Nguyen Anh Tuan"
+  "portrait": "portrait.txt",
+  "portraitTip": "Honk. My GitHub avatar, in ASCII.",
+  "portraitTipFr": "Honk. Mon avatar GitHub, en ASCII."
 }

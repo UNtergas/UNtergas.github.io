@@ -322,8 +322,8 @@
   const FIG = {
     hangL:   ['\\o ', ' |\\', '/ \\'],     /* hand on a left hold, other arm hangs */
     hangR:   [' o/', '/| ', '/ \\'],
-    crouchL: ['\\o ', ' |\\', '> >'],      /* same, legs coiled for the jump */
-    crouchR: [' o/', '/| ', '< <'],
+    crouchL: ['\\o ', ' |\\', '/ >'],      /* jumping right: left leg straight, right leg bent */
+    crouchR: [' o/', '/| ', '< \\'],       /* jumping left: right leg straight, left leg bent */
     flyL:    ['\\o ', ' | ', ' |\\'],      /* reaching left, right leg kicked out */
     flyR:    [' o/', ' | ', '/| '],
     cheerL:  ['\\o/', ' | ', '/ \\'],      /* top hold on the left, right arm waves… */

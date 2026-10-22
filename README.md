@@ -80,7 +80,7 @@ Every language is built into the page; only one is shown and measured at a time.
 ## Portrait
 
 `"portrait": "portrait.txt"` in `content/site.json` points at a plain-text ASCII picture in
-`content/`. It is printed right after the name on the front page, small (a quarter of the
+`content/`. It is printed just left of the name on the front page, small (a quarter of the
 body size), so it reads as a picture at normal zoom and as characters up close.
 `portraitTip` / `portraitTipFr` set its status-line tip. Today it is the GitHub avatar
 (the goose), drawn as outline `#`, fill `:`, beak and feet `%`, knife `=`, eye `@`.

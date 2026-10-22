@@ -177,11 +177,11 @@ section.flash{animation:flash .5s steps(1) 3}
 @keyframes flash{50%{outline:3px solid var(--ink);outline-offset:4px}}
 .face[hidden]{display:none}
 
-/* ---------- ASCII portrait, right after the name ---------- */
-.namerow{display:flex;align-items:center;justify-content:space-between;gap:1.4em}
+/* ---------- ASCII portrait, just left of the name ---------- */
+.namerow{display:flex;align-items:center;gap:1.6em;margin-bottom:.5em}
 .who{min-width:0}
 .avatar{margin:0;font-family:var(--mono);font-size:.25em;line-height:1;letter-spacing:0;color:var(--ink);
-  white-space:pre;cursor:help;flex:none}
+  white-space:pre;cursor:help;flex:none;order:-1}   /* left of the name */
 .avatar:hover,.avatar:focus-visible,.avatar.tip-on{background:none;color:var(--ink);outline:none}
 /* ---------- small screens ---------- */
 /* Phones: a narrower, slightly longer sheet shaped like the phone's stage, so it

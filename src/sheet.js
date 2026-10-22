@@ -32,7 +32,8 @@
     SH = parseFloat(cs.getPropertyValue('--sh')) || 1018;
     const w = stage.clientWidth, h = stage.clientHeight;
     const fill = parseFloat(cs.getPropertyValue('--fill')) || 0.9;   /* share of the width the sheet may take */
-    base = Math.max(0.2, Math.min(w * fill / SW, h * 0.94 / SH));
+    const fitW = cs.getPropertyValue('--fitw').trim() === '1';       /* phones: fit the width, scroll the length */
+    base = Math.max(0.2, fitW ? w * fill / SW : Math.min(w * fill / SW, h * 0.94 / SH));
   }
 
   /* Pan bounds are measured, not predicted: the sheet is tilted inside a
@@ -105,14 +106,28 @@
   addEventListener('resize', requeue);
   addEventListener('orientationchange', () => setTimeout(relayout, 250));
   /* iOS fires this, not resize, when the browser toolbar collapses or expands */
-  if (window.visualViewport) visualViewport.addEventListener('resize', requeue);
+  const vv = window.visualViewport;
+  if (vv) vv.addEventListener('resize', requeue);
+  /* iOS doesn't shrink the page for the on-screen keyboard, it slides it up under it.
+     The body is fixed (CSS) and sized to the visible part instead, so the bar sits on
+     the keyboard and the stage is only what you can see. */
+  if (vv) {
+    const pin = () => {
+      if (vv.scale > 1.01) return;                   /* page pinch-zoomed: leave it */
+      document.body.style.height = vv.height + 'px';
+      document.body.style.top = vv.offsetTop + 'px';
+    };
+    vv.addEventListener('resize', pin); vv.addEventListener('scroll', pin); pin();
+  }
 
   if (!reduce) {
-    const from = { rx:16, ry:-42 }, t0 = performance.now();
+    /* a long sheet (phones) never tips forward: tilted, its top would leave the screen */
+    const tall = sheet.offsetHeight > stage.clientHeight;
+    const from = { rx:tall ? 0 : 16, ry:-42 }, t0 = performance.now(), rx1 = tall ? 0 : -7;
     (function intro(now){
       if (touched) return;
       const e = 1 - Math.pow(1 - Math.min(1,(now-t0)/900), 3);
-      st.rx = from.rx + (-7-from.rx)*e;
+      st.rx = from.rx + (rx1-from.rx)*e;
       st.ry = from.ry + (-4-from.ry)*e;
       render();
       if (e < 1) requestAnimationFrame(intro);
@@ -121,7 +136,7 @@
 
   /* ---- drag, pinch ---- */
   const pts = new Map();
-  let last = null, pinch0 = 0, zoom0 = 1, downX = 0, downY = 0, moved = 0, captured = false;
+  let last = null, pinch0 = 0, zoom0 = 1, downX = 0, downY = 0, moved = 0, captured = false, lock = 'x';
   const dist = () => { const [a,b] = [...pts.values()];
     return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY) || 1; };
 
@@ -144,14 +159,18 @@
     }
     if (!st.drag || !last) return;
     moved = Math.hypot(e.clientX - downX, e.clientY - downY);
-    if (moved > 5 && !captured) { stage.setPointerCapture(e.pointerId); captured = true; }
+    if (moved > 5 && !captured) {
+      stage.setPointerCapture(e.pointerId); captured = true;
+      lock = Math.abs(e.clientY - downY) > Math.abs(e.clientX - downX) ? 'y' : 'x';   /* one axis per gesture */
+    }
     if (!captured) return;
     const dx = e.clientX - last.clientX, dy = e.clientY - last.clientY;
-    if (st.zoom > 1.02 && !e.shiftKey) {        // zoomed in: you are reading, so pan
+    const tall = sheet.offsetHeight > stage.clientHeight + 1;   /* phones: the sheet is longer than the screen */
+    if ((st.zoom > 1.02 || (tall && lock === 'y')) && !e.shiftKey) {   // reading: pan (up/down scrolls a long sheet)
       st.px += dx; st.py += dy;
       st.vx = st.vy = 0;
     } else {                                     // fitted, or Shift held: turn the page
-      st.vx = dx * 0.32; st.vy = dy * 0.22;
+      st.vx = dx * 0.32; st.vy = tall ? 0 : dy * 0.22;   /* long sheet: sideways only turns it, never tips it */
       st.ry += st.vx; st.rx = clamp(st.rx - st.vy, -72, 72);
     }
     last = e; render();
@@ -423,10 +442,12 @@
   }
   const layFlat = () => { goHome(); faceOn(); };   /* goHome: further down, with the prompt */
 
+  const TOP = 16;                                     /* a tall block's top lands this far under the stage top */
   /* slide the sheet so el sits in the middle of the stage (correctPan keeps it in bounds) */
   function centreOn(el){
     const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
-    const dx = s.left + s.width / 2 - (r.left + r.width / 2), dy = s.top + s.height / 2 - (r.top + r.height / 2);
+    const dx = s.left + s.width / 2 - (r.left + r.width / 2);
+    const dy = r.height > s.height * 0.9 ? s.top + TOP - r.top : s.top + s.height / 2 - (r.top + r.height / 2);
     const p0 = { x:st.px, y:st.py }, t0 = performance.now(), id = faceAnim = {};
     if (reduce) { st.px += dx; st.py += dy; render(); return; }
     (function step(now){
@@ -447,9 +468,13 @@
     const f = zoom / st.zoom, W = stage.clientWidth, H = stage.clientHeight;
     const w = SW * base * zoom, h = SH * base * zoom;
     const left0 = Math.max(0, (W - w) / 2), top0 = Math.max(0, (H - h) / 2);
-    return { px: W / 2 - left0 - x * f, py: H / 2 - top0 - y * f };
+    const tall = el.offsetHeight * f > H * 0.9;      /* taller than the stage: show its top, not its middle */
+    return { px: W / 2 - left0 - x * f, py: tall ? TOP - top0 - (y - el.offsetHeight / 2) * f : H / 2 - top0 - y * f };
   }
   function focusEl(el, zoom){
+    requestAnimationFrame(() => focusNow(el, zoom));   /* after the command's output has resized the status line */
+  }
+  function focusNow(el, zoom){
     const back = !!el.closest('.back');
     /* already square on that face at that zoom (n / N between matches): just slide
        there. Going through faceOn would pan back to the middle first. */
@@ -784,6 +809,15 @@
     logout: COMMANDS.exit, vi: COMMANDS.vim, nano: COMMANDS.vim, emacs: COMMANDS.vim, ':q': COMMANDS.exit,
     find: COMMANDS.grep });
 
+  /* phones: Enter puts the keyboard away, and the command runs once the page has its
+     full height back, so cd / ls / cat aim at the real stage, not the strip above the keys */
+  function afterKeyboard(fn){
+    if (!vv) return fn();
+    let t;
+    const go = ms => { clearTimeout(t); t = setTimeout(() => { vv.removeEventListener('resize', settle); fn(); }, ms); };
+    const settle = () => go(150);
+    vv.addEventListener('resize', settle); go(400);
+  }
   function run(line){
     const [name, ...args] = line.trim().replace(/^:(?!q$)/, '').split(/\s+/);   /* ":help" works too; :q stays a joke */
     if (!name) return;
@@ -832,11 +866,16 @@
     e.stopPropagation();
     if (e.key === 'Escape') { if (mode === 'search') clearHits(); closeLine(); idle(); return; }
     if (e.key === 'Enter') {
-      if (mode === 'search') { closeLine(); if (hits.length) { hitAt = -1; jump(1); } else { said = null; say('no match'); } return; }
+      if (mode === 'search') {
+        closeLine();
+        const go = () => { if (hits.length) { hitAt = -1; jump(1); } else { said = null; say('no match'); } };
+        if (coarse) afterKeyboard(go); else go();
+        return;
+      }
       const line = cmd.value;
       if (line.trim()) { hist.push(line); histAt = hist.length; }
       cmd.value = '';
-      run(line);
+      if (coarse) { closeLine(); afterKeyboard(() => run(line)); } else run(line);
       return;
     }
     if (mode !== 'shell') return;

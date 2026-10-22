@@ -23,7 +23,7 @@ No dependencies, no bundler, no framework. One font: JetBrains Mono.
 | `c` | contact (opens the mail app) |
 | `/` | search the sheet, like in `man`: matches highlight as you type, Enter jumps |
 | `n` / `N` | next / previous match (zooms onto it, flipping the sheet if needed) |
-| `Enter`, `:`, or click the status line | open the shell (see below) |
+| `:` (or the `[:] command` key, Enter, or a click on the status line) | type a command (see below); typing a letter without `:` shows how |
 | `l` | switch language (EN ⇄ FR) |
 | `p` | print |
 | Hover / focus / tap a dotted word | its explanation appears in the status line; ASCII charts type themselves out |
@@ -31,7 +31,10 @@ No dependencies, no bundler, no framework. One font: JetBrains Mono.
 
 Browser shortcuts (Ctrl/Cmd + anything) are left alone.
 
-The status line also counts flips and dynos (kept in `localStorage`) and shows a live
+The status line also counts flips and dynos (kept in `localStorage`). They count what the
+sheet does, not which key was pressed: every time the other face comes round is a flip
+(key, drag, search, `cat`…), and a full turn inside one second is a dyno, flung by hand
+included. It shows a live
 "uptime" since the current job started. Idle tips rotate in it every few seconds.
 
 ## The shell
@@ -45,7 +48,7 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 | `ls` | sections, PDFs, the portrait |
 | `cat <section>` | zoom onto that section and flash its box (`less`, `more` too) |
 | `grep <word>` | same as `/` search |
-| `open <file>` | download a PDF; `open portrait` brings the photo back |
+| `open <file\|section>` | download a PDF, or show a section like `cat`; `open portrait` brings the photo back |
 | `man tuan` | back to the front page |
 | `top` | the console's CPU, live, before and after the incident fix |
 | `flip`, `dyno`, `lang en\|fr`, `contact`, `print`, `uptime`, `clear` | what they say |

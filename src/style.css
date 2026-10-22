@@ -166,6 +166,7 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
 #status{cursor:text}
 #cmd{display:none;flex:1;min-width:8ch;font:inherit;color:#fff;background:none;border:0;outline:none;padding:0;caret-color:#fff}
 #status.typing #cmd{display:block}
+#cmd::placeholder{color:#555}
 #status.typing #msg{flex-basis:100%;min-height:1.4em}  /* output under the line you type */
 #status.typing #msg::after{content:none}
 mark.hit{background:none;color:inherit;outline:1px solid var(--ink);outline-offset:0}

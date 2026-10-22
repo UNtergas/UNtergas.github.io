@@ -59,8 +59,10 @@
     if (dx || dy) { st.px += dx; st.py += dy; applyTransform(); }
   }
 
+  let watchTurn = null;                  /* set by the counters below */
   function render(){
     const k = base * st.zoom, ry = st.ry + st.flip;
+    if (watchTurn) watchTurn(ry);
     root.style.setProperty('--k', k);
     stage.classList.toggle('panning', st.zoom > 1.02);
     applyTransform();
@@ -199,7 +201,7 @@
     en: [
       'drag to turn · scroll or pinch to zoom · [f] flip',
       'hover a dotted word or a number for details',
-      'this line is a shell: click it or press Enter, then type help',
+      'press : to type a command · try :help',
       'press [f] twice, fast: dyno',
       '[/] searches the sheet, like in man',
       '[c] to write to me · ↓ to download the CV',
@@ -207,7 +209,7 @@
     fr: [
       'glisser pour tourner · molette ou pincer pour zoomer · [f] retourner',
       'survolez un mot pointillé ou un chiffre pour le détail',
-      'cette ligne est un shell : cliquez dessus ou Entrée, puis tapez help',
+      'appuyez sur : pour taper une commande · essayez :help',
       'appuyez deux fois vite sur [f] : dyno',
       '[/] cherche dans la feuille, comme dans man',
       "[c] pour m'écrire · ↓ pour télécharger le CV",
@@ -220,6 +222,27 @@
     bump(k){ const v = this.get(k) + 1; try { localStorage.setItem(k, v); } catch {} return v; },
   };
   let flips = store.get('cv.flips'), dynos = store.get('cv.dynos');
+
+  /* Counted from the sheet itself, however it turned (key, drag, search, cat…):
+     every time the other face comes round is a flip; a full turn inside one
+     second is a dyno, flung by hand included. */
+  let shown = null, spins = [], dynoing = false, lastDyno = 0;
+  function countDyno(){
+    lastDyno = performance.now(); spins = [];
+    dynos = store.bump('cv.dynos'); showStats();
+    climb();
+  }
+  watchTurn = T => {
+    const now = performance.now(), c = Math.cos(T * Math.PI / 180);
+    if (shown === null) shown = c >= 0;
+    else if (Math.abs(c) > 0.2 && (c > 0) !== shown) {      /* 0.2: no double count at the edge */
+      shown = c > 0;
+      flips = store.bump('cv.flips'); showStats();
+    }
+    spins.push([now, T]);
+    while (now - spins[0][0] > 1000) spins.shift();
+    if (!dynoing && now - lastDyno > 1500 && Math.abs(T - spins[0][1]) >= 360) countDyno();
+  };
 
   /* uptime from data-since="YYYY-MM" (and data-until, once the job ends) */
   function uptime(){
@@ -320,18 +343,17 @@
   let base0 = 0;                                     /* where the current flip started */
   function flip(){
     const now = performance.now();
-    flips = store.bump('cv.flips');
-    if (now - lastFlip < 700 && anim) {              /* dyno! */
-      dynos = store.bump('cv.dynos');
+    if (now - lastFlip < 700 && anim) {              /* dyno! counted here, not by the spin watcher */
       lastFlip = 0;
+      dynoing = true;
+      setTimeout(() => { dynoing = false; spins = []; }, 1250);
       animateTo(base0 + 720, 1150);
-      climb();
+      countDyno();
     } else {
       lastFlip = now;
       base0 = Math.round(st.flip / 180) * 180;
       animateTo(base0 + 180, 620);
     }
-    showStats();
   }
 
   /* face on: square to the viewer, on a given face (or the nearest one) and zoom.
@@ -491,6 +513,7 @@
   cmd.addEventListener('blur', closeLine);
   status.addEventListener('click', e => { if (!mode && !e.target.closest('a,button')) openLine('shell'); });
   document.getElementById('search').onclick = () => openLine('search');
+  document.getElementById('shell').onclick = () => openLine('shell');
 
   const faceTitle = () => sheet.querySelector('.face.front:not([hidden])');
   const sectionsNow = () => [...sheet.querySelectorAll('.face:not([hidden]) section')];
@@ -528,7 +551,8 @@
       const name = (a[0] || '').toLowerCase();
       if (/^portrait/.test(name) && portrait) { portrait.hidden = false; return 'portrait: 1-bit, Atkinson dithered, like MacPaint'; }
       const file = filesNow().find(f => f.name.toLowerCase() === name);
-      if (!file) return `open: ${name || '?'}: no such file. try ls`;
+      if (!file && name) return COMMANDS.cat([name]).replace(/^cat:/, 'open:');   /* a section: same as cat */
+      if (!file) return 'open: what? try ls';
       file.a.click();
       return `opening ${file.name}…`;
     },
@@ -579,7 +603,7 @@
     const parts = cmd.value.split(/\s+/), last = parts[parts.length - 1].toLowerCase();
     const pool = parts.length === 1 ? Object.keys(COMMANDS)
       : /^(cat|less|more)$/.test(parts[0]) ? sectionsNow().map(s => s.dataset.key)
-      : parts[0] === 'open' ? filesNow().map(f => f.name).concat(portrait ? ['portrait'] : [])
+      : parts[0] === 'open' ? sectionsNow().map(s => s.dataset.key).concat(filesNow().map(f => f.name), portrait ? ['portrait'] : [])
       : parts[0] === 'lang' ? LANGS
       : parts[0] === 'man'  ? ['tuan'] : [];
     const found = pool.filter(w => w.toLowerCase().startsWith(last));
@@ -635,6 +659,10 @@
     if (k === 'n') jump(1);
     if (k === 'N') jump(-1);
     if (k === 'Escape') { document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on')); clearHits(); idle(); }
+    /* someone starts typing a command without ':' first: tell them how */
+    else if (/^[a-z]$/i.test(k) && !'fFcCpPlLnN'.includes(k)) { said = null; say(lang === 'fr'
+      ? 'pour taper une commande, appuyez d’abord sur :  · essayez :help'
+      : 'to type a command, press : first · try :help'); }
   });
 
   /* ---- portrait: any photo, dithered to 1 bit with Atkinson's kernel (MacPaint's) ---- */

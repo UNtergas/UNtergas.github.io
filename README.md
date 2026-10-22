@@ -53,7 +53,7 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 | `help` | list the commands |
 | `whoami` | name and role |
 | `ls` | sections and PDFs; inside a section (after `cd`), what it holds: entries with their dates, grid labels, or the opening sentence. `ls <section>` and `ls ..` work from anywhere. The view follows what is listed (the prompt stays put) |
-| `cd <section>` | go into that section: the sheet turns and zooms onto it, its box flashes, and the prompt becomes `tuan@cv:~/experience$` (`experience`, `experience/`, `../skills` all work) |
+| `cd <section>` | go into that section: the sheet turns and zooms onto it, its box flashes, and the prompt becomes `tuan@cv:~/experience$` (`experience`, `experience/`, `../skills`, `~/skills`, `/home/tuan/cv/skills` all work) |
 | `cd ..`, `cd ~`, `cd` | back to the whole page, laid flat (so does `0`) |
 | `cat <section>` | `Is a directory · try cd <section>`, like a real shell |
 | `grep <word>` | same as `/` search |

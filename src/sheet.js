@@ -590,6 +590,14 @@
   const filesNow = () => [...document.querySelectorAll('#keys a.download')]
     .map(a => ({ name: a.getAttribute('href').split('?')[0], a }));
   const later = (ms, fn) => setTimeout(fn, ms);
+  /* a path as typed -> '' (home: ~, .., /home/tuan/cv) or a name (section key or file).
+     Accepts experience, experience/, ./x, ../x, ../../x, ~/x, /home/tuan/cv/x. '.' is here. */
+  function resolve(raw){
+    let p = raw.toLowerCase().replace(/^\/home\/tuan\/cv(\/|$)/, '~/').replace(/\/+$/, '');
+    if (p === '.' ) return here;
+    p = p.replace(/^(~\/?|\/|(\.\.?\/)+)/, '');
+    return /^(~|\.\.|\.)?$/.test(p) ? '' : p;
+  }
   /* what a section holds: entries with their dates, grid labels, or the opening sentence */
   function listSection(sec){
     const entries = [...sec.querySelectorAll('.entry')];
@@ -616,9 +624,7 @@
     ls: a => {
       /* ls: where you are (cd), or a named section; ~ / .. list the top level */
       const raw = (a.find(x => !x.startsWith('-')) || '').toLowerCase();
-      const target = !raw || /^\.\/?$/.test(raw) ? here
-        : /^(~|\.\.|\/)\/?$/.test(raw) ? ''
-        : raw.replace(/^(~\/|\.\.\/|\.\/)+/, '').replace(/\/$/, '');
+      const target = !raw || /^\.\/?$/.test(raw) ? here : resolve(raw);
       /* the view follows what is listed; where you are (here, the prompt) does not change */
       if (!target) { if (raw) faceOn(); return sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  '); }
       const sec = sectionsNow().find(s => s.dataset.key === target);
@@ -629,11 +635,9 @@
     cd: a => {
       /* accepts experience, experience/, ./experience, ~/experience, ../experience */
       const raw = (a[0] || '').toLowerCase();
-      const name = raw.replace(/^(~\/|\.\.\/|\.\/)+/, '').replace(/\/$/, '');
-      if (!name || /^(~|\.\.|\/|\.)$/.test(raw.replace(/\/$/, '') || '~')) {
-        if (raw === '.' || raw === './') return '';          /* stay where you are */
-        layFlat(); return '';
-      }
+      if (/^\.\/?$/.test(raw)) return '';                   /* cd . : stay where you are */
+      const name = resolve(raw);
+      if (!name) { layFlat(); return ''; }
       const sec = sectionsNow().find(s => s.dataset.key === name)
                || sectionsNow().find(s => s.dataset.key.startsWith(name));
       if (sec) {

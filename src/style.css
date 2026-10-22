@@ -24,6 +24,9 @@ body{
   -webkit-text-size-adjust:100%;
   overscroll-behavior:none;
 }
+/* no double-tap zoom on phones; taps and the sheet's own pinch still work.
+   Set on each control too: older iOS Safari reads it per element. */
+body,#bar,#bar *{touch-action:manipulation}
 
 /* ---------- stage: owns its own height, the bar never sits on the paper ---------- */
 #stage{

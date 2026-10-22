@@ -619,9 +619,10 @@
       const target = !raw || /^\.\/?$/.test(raw) ? here
         : /^(~|\.\.|\/)\/?$/.test(raw) ? ''
         : raw.replace(/^(~\/|\.\.\/|\.\/)+/, '').replace(/\/$/, '');
-      if (!target) return sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  ');
+      /* the view follows what is listed; where you are (here, the prompt) does not change */
+      if (!target) { if (raw) faceOn(); return sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  '); }
       const sec = sectionsNow().find(s => s.dataset.key === target);
-      if (sec) return listSection(sec);
+      if (sec) { showSection(sec); return listSection(sec); }
       if (filesNow().some(f => f.name.toLowerCase() === target)) return target;
       return `ls: cannot access '${raw}': No such file or directory`;
     },

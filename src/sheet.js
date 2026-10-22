@@ -7,6 +7,18 @@
   const shade = document.getElementById('shade');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* one sheet per language in the DOM; only the current one is shown and measured.
+     ?lang=fr in the URL wins over the last choice. */
+  const LANGS = (root.dataset.langs || 'en').split(' ');
+  const saved = (() => { try { return localStorage.getItem('cv.lang'); } catch { return null; } })();
+  const asked = new URLSearchParams(location.search).get('lang');
+  let lang = [asked, saved].find(l => LANGS.includes(l)) || LANGS[0];
+  function showLang(l){
+    lang = root.dataset.lang = root.lang = l;
+    sheet.querySelectorAll('.face').forEach(f => { f.hidden = f.dataset.lang !== l; });
+  }
+  showLang(lang);
+
   const st = { rx:-7, ry:-4, zoom:1, flip:0, vx:0, vy:0, px:0, py:0, drag:false };
   let base = 1, touched = false;
   const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
@@ -63,7 +75,7 @@
      .measuring turns on overflow:hidden just for the measurement — the rest of
      the time the box must stay unclipped or it cuts the tooltips off. */
   function fitText(){
-    sheet.querySelectorAll('.face').forEach(face => {
+    sheet.querySelectorAll('.face:not([hidden])').forEach(face => {
       const body = face.querySelector('.body');
       let size = 16;
       face.classList.add('measuring');
@@ -108,6 +120,7 @@
   stage.addEventListener('pointerdown', e => {
     downX = e.clientX; downY = e.clientY; moved = 0;
     pts.set(e.pointerId, e);
+    faceAnim = null;                                 /* grabbing the sheet stops a camera move */
     if (pts.size === 1) { st.drag = true; last = e; st.vx = st.vy = 0; stage.classList.add('dragging'); }
     if (pts.size === 2) { pinch0 = dist(); zoom0 = st.zoom; }
     touched = true;
@@ -182,14 +195,26 @@
   /* ---- status line: tooltips, counters, uptime ---- */
   const msg = document.getElementById('msg'), stats = document.getElementById('stats');
   /* idle hints rotate in the status line (they used to float over the paper) */
-  const IDLES = [
-    'drag to turn · scroll or pinch to zoom · [f] flip',
-    'hover a dotted word or a number for details',
-    'press [f] twice, fast: dyno',
-    '[c] to write to me · ↓ to download the CV',
-  ];
+  const IDLES = {
+    en: [
+      'drag to turn · scroll or pinch to zoom · [f] flip',
+      'hover a dotted word or a number for details',
+      'this line is a shell: click it or press Enter, then type help',
+      'press [f] twice, fast: dyno',
+      '[/] searches the sheet, like in man',
+      '[c] to write to me · ↓ to download the CV',
+    ],
+    fr: [
+      'glisser pour tourner · molette ou pincer pour zoomer · [f] retourner',
+      'survolez un mot pointillé ou un chiffre pour le détail',
+      'cette ligne est un shell : cliquez dessus ou Entrée, puis tapez help',
+      'appuyez deux fois vite sur [f] : dyno',
+      '[/] cherche dans la feuille, comme dans man',
+      "[c] pour m'écrire · ↓ pour télécharger le CV",
+    ],
+  };
   let idleAt = 0, idling = true;
-  const idle = () => { say(IDLES[idleAt % IDLES.length]); idling = true; };
+  const idle = () => { const l = IDLES[lang] || IDLES.en; say(l[idleAt % l.length]); idling = true; };
   const store = {
     get(k){ try { return +localStorage.getItem(k) || 0; } catch { return 0; } },
     bump(k){ const v = this.get(k) + 1; try { localStorage.setItem(k, v); } catch {} return v; },
@@ -210,25 +235,53 @@
   function showStats(){
     stats.innerHTML = `flips <b>${flips}</b>` + (dynos ? ` · dynos <b>${dynos}</b>` : '') + uptime();
   }
+  /* a tip that holds an ASCII chart is typed out, so the bars grow */
+  const BARS = /[█▁▂▃▄▅▆▇]/;
+  let sayId = 0, said = null;
   function say(text, cls){
     idling = false;
-    msg.textContent = text;
     msg.className = cls || '';
+    if (text === said) return;                       /* same tip re-hovered: don't restart */
+    said = text;
+    const id = ++sayId;
+    if (reduce || !BARS.test(text)) { msg.textContent = text; return; }
+    let n = 0;
+    (function type(){
+      if (id !== sayId) return;                      /* something newer took the line */
+      msg.textContent = text.slice(0, ++n);
+      if (n < text.length) setTimeout(type, BARS.test(text[n - 1]) ? 40 : 10);
+    })();
+  }
+  /* `top`: the console's CPU before and after the incident fix, live */
+  function top(){
+    const id = ++sayId, spark = '▁▂▃▄▅▆▇█', series = [];
+    idling = false; said = null; msg.className = '';
+    let t = 0;
+    (function tick(){
+      if (id !== sayId) return;
+      const before = t < 60;
+      const v = before && t % 10 === 0 ? 0.99 : 0.1 + Math.random() * (before ? 0.08 : 0.1);
+      series.push(v); if (series.length > 30) series.shift();
+      msg.textContent = `top - cpu ${series.map(x => spark[Math.min(7, Math.floor(x * 8))]).join('')} ${String(Math.round(v * 100)).padStart(3)}%  `
+        + (before ? 'before the fix: a spike every 10 min' : 'after the fix: 10-20% max');
+      if (++t < 130) setTimeout(tick, 80);
+    })();
   }
   idle(); showStats();
   setInterval(() => { if (idling) { idleAt++; idle(); } }, 4500);
   setInterval(showStats, 60000);
 
   const tipOf = t => t && t.closest && t.closest('[data-tip]');
-  document.addEventListener('pointerover', e => { const t = tipOf(e.target); if (t) say(t.dataset.tip); });
+  const tipText = t => (lang === 'fr' && t.dataset.tipFr) || t.dataset.tip;
+  document.addEventListener('pointerover', e => { const t = tipOf(e.target); if (t) say(tipText(t)); });
   document.addEventListener('pointerout',  e => { const t = tipOf(e.target); if (t && !t.classList.contains('tip-on')) idle(); });
-  document.addEventListener('focusin',     e => { const t = tipOf(e.target); if (t) say(t.dataset.tip); });
+  document.addEventListener('focusin',     e => { const t = tipOf(e.target); if (t) say(tipText(t)); });
 
   /* ---- flip, and the dyno: a second flip within 700 ms becomes one 720° spin ---- */
   let anim = null, lastFlip = 0;
   function animateTo(to, dur){
     const from = st.flip, t0 = performance.now(), id = {};
-    anim = id;
+    anim = id; faceAnim = null;                      /* a flip overrides a camera move */
     if (reduce) { st.flip = to; render(); return; }
     (function step(now){
       if (anim !== id) return;                       /* a newer flip took over */
@@ -281,29 +334,116 @@
     showStats();
   }
 
-  /* lay flat = face on, zoomed back out to fit */
-  function layFlat(){
-    const f = { rx:st.rx, ry:st.ry, z:st.zoom, px:st.px, py:st.py }, t0 = performance.now();
-    const targetRy = Math.round((st.ry + st.flip) / 180) * 180 - st.flip;
-    if (reduce) { st.rx = 0; st.ry = targetRy; st.zoom = 1; st.px = st.py = 0; st.vx = st.vy = 0; render(); return; }
+  /* face on: square to the viewer, on a given face (or the nearest one) and zoom.
+     lay flat = face on, zoomed back out to fit. */
+  let faceAnim = null;
+  function faceOn({ back, zoom = 1, done } = {}){
+    anim = null;                                     /* stop a flip in progress */
+    const T = st.ry + st.flip, off = back ? 180 : 0;
+    const target = back === undefined ? Math.round(T / 180) * 180 : off + Math.round((T - off) / 360) * 360;
+    const f = { rx:st.rx, ry:st.ry, z:st.zoom, px:st.px, py:st.py }, ry1 = target - st.flip;
     st.vx = st.vy = 0;
-    (function anim(now){
+    if (reduce) { st.rx = 0; st.ry = ry1; st.zoom = zoom; st.px = st.py = 0; render(); if (done) done(); return; }
+    const id = faceAnim = {}, t0 = performance.now();
+    (function step(now){
+      if (faceAnim !== id) return;
       const k = Math.min(1, (now - t0) / 480), e = 1 - Math.pow(1 - k, 3);
-      st.rx = f.rx + (0 - f.rx) * e;
-      st.ry = f.ry + (targetRy - f.ry) * e;
-      st.zoom = f.z + (1 - f.z) * e;
+      st.rx = f.rx * (1 - e);
+      st.ry = f.ry + (ry1 - f.ry) * e;
+      st.zoom = f.z + (zoom - f.z) * e;
       st.px = f.px * (1 - e);
       st.py = f.py * (1 - e);
       render();
-      if (k < 1) requestAnimationFrame(anim);
+      if (k < 1) requestAnimationFrame(step); else if (done) done();
     })(t0);
+  }
+  const layFlat = () => faceOn();
+
+  /* slide the sheet so el sits in the middle of the stage (correctPan keeps it in bounds) */
+  function centreOn(el){
+    const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const dx = s.left + s.width / 2 - (r.left + r.width / 2), dy = s.top + s.height / 2 - (r.top + r.height / 2);
+    const p0 = { x:st.px, y:st.py }, t0 = performance.now(), id = faceAnim = {};
+    if (reduce) { st.px += dx; st.py += dy; render(); return; }
+    (function step(now){
+      if (faceAnim !== id) return;
+      const k = Math.min(1, (now - t0) / 320), e = 1 - Math.pow(1 - k, 3);
+      st.px = p0.x + dx * e; st.py = p0.y + dy * e; render();
+      if (k < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  const focusEl = (el, zoom) => faceOn({ back: !!el.closest('.back'), zoom, done: () => centreOn(el) });
+
+  /* zoom until a whole section fills the stage, then flash its box */
+  function showSection(sec){
+    const h1 = sec.offsetHeight / st.zoom, w1 = sec.offsetWidth / st.zoom;
+    focusEl(sec, clamp(Math.min(0.9 * stage.clientHeight / h1, 0.95 * stage.clientWidth / w1), 1, 2.4));
+    sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash');
+  }
+
+  /* ---- language ---- */
+  const langBtn = document.getElementById('lang');
+  const otherLang = () => LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
+  function setLang(l){
+    if (!LANGS.includes(l)) return false;
+    clearHits();
+    showLang(l);
+    try { localStorage.setItem('cv.lang', l); } catch {}
+    if (langBtn) langBtn.querySelector('span').textContent = otherLang().toUpperCase();
+    fitText(); render();
+    idleAt = 0; idle();
+    return true;
+  }
+  if (langBtn) { langBtn.querySelector('span').textContent = otherLang().toUpperCase(); langBtn.onclick = () => setLang(otherLang()); }
+
+  /* ---- search: / like in man and less; n and N step through the matches ---- */
+  let hits = [], hitAt = -1;
+  function clearHits(){
+    for (const m of sheet.querySelectorAll('mark.hit')) {
+      const parent = m.parentNode;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    }
+    hits = []; hitAt = -1;
+  }
+  function find(q){
+    clearHits();
+    q = q.trim();
+    if (q.length < 2) return 0;
+    const ql = q.toLowerCase();
+    for (const face of sheet.querySelectorAll('.face:not([hidden]) .body')) {
+      const walk = document.createTreeWalker(face, NodeFilter.SHOW_TEXT), nodes = [];
+      while (walk.nextNode()) nodes.push(walk.currentNode);
+      for (let node of nodes) {
+        let i;
+        while ((i = node.data.toLowerCase().indexOf(ql)) !== -1) {
+          const hit = node.splitText(i);
+          node = hit.splitText(q.length);
+          const m = document.createElement('mark');
+          m.className = 'hit';
+          hit.parentNode.replaceChild(m, hit);
+          m.appendChild(hit);
+          hits.push(m);
+        }
+      }
+    }
+    return hits.length;
+  }
+  function jump(step){
+    if (!hits.length) return;
+    hitAt = (hitAt + step + hits.length) % hits.length;
+    hits.forEach((h, i) => h.classList.toggle('on', i === hitAt));
+    focusEl(hits[hitAt], 1.9);
+    say(`match ${hitAt + 1} of ${hits.length} · [n] next · [N] previous · [esc] clear`);
   }
 
   /* ---- contact, window boxes ---- */
   const contact = document.getElementById('contact');
   contact.addEventListener('click', () => say('opening your mail app…'));
+  const portrait = document.getElementById('portrait');
   stage.addEventListener('click', e => {
     if (moved > 5) return;
+    if (e.target.closest('#portrait .box.close')) { portrait.hidden = true; say('portrait closed. type `open portrait` to bring it back'); return; }
     if (e.target.closest('.box.close')) say("a CV can't be closed. try [c] to write to me");
     if (e.target.closest('.box.zoom')) layFlat();
   });
@@ -326,9 +466,157 @@
     }
   });
 
+  /* ---- the status line is a shell ---- */
+  const cmd = document.getElementById('cmd'), status = document.getElementById('status');
+  const promptEl = document.getElementById('prompt'), PS1 = promptEl.textContent;
+  let mode = null;                                   /* null | 'shell' | 'search' */
+  const hist = []; let histAt = 0;
+
+  function openLine(m){
+    mode = m;
+    status.classList.add('typing');
+    promptEl.textContent = m === 'search' ? '/' : PS1;
+    cmd.value = '';
+    cmd.focus();
+    say(m === 'search' ? 'type to highlight · enter to jump · esc to cancel'
+                       : 'type help · tab completes · ↑ history · esc leaves');
+  }
+  function closeLine(){
+    if (!mode) return;
+    mode = null;
+    status.classList.remove('typing');
+    promptEl.textContent = PS1;
+    if (document.activeElement === cmd) cmd.blur();
+  }
+  cmd.addEventListener('blur', closeLine);
+  status.addEventListener('click', e => { if (!mode && !e.target.closest('a,button')) openLine('shell'); });
+  document.getElementById('search').onclick = () => openLine('search');
+
+  const faceTitle = () => sheet.querySelector('.face.front:not([hidden])');
+  const sectionsNow = () => [...sheet.querySelectorAll('.face:not([hidden]) section')];
+  const filesNow = () => [...document.querySelectorAll('#keys a.download')]
+    .map(a => ({ name: a.getAttribute('href').split('?')[0], a }));
+  const later = (ms, fn) => setTimeout(fn, ms);
+
+  const COMMANDS = {
+    help: () =>
+      'whoami · ls · cat <section> · grep <word> · open <file> · man tuan · top\n' +
+      'flip · dyno · lang <' + LANGS.join('|') + '> · contact · print · uptime · clear · exit',
+    whoami: () => {
+      const f = faceTitle();
+      return `${f.querySelector('h1').textContent} · ${f.querySelector('.role').textContent}`;
+    },
+    ls: () => sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name),
+      portrait ? ['portrait.pict'] : []).join('  '),
+    cat: a => {
+      const name = (a[0] || '').replace(/\/$/, '').toLowerCase();
+      if (!name) return 'cat: which one? try ls';
+      const sec = sectionsNow().find(s => s.dataset.key === name)
+               || sectionsNow().find(s => s.dataset.key.startsWith(name));
+      if (sec) { showSection(sec); return `${sec.dataset.key}: on the sheet ↑ · [0] to lay it flat again`; }
+      const file = filesNow().find(f => f.name === name);
+      if (file) return `cat: ${name}: binary file, try open ${name}`;
+      return `cat: ${name}: no such section. try ls`;
+    },
+    grep: a => {
+      const q = a.filter(x => !x.startsWith('-')).join(' ');
+      if (!q) return 'usage: grep <word>';
+      if (!find(q)) return `grep: no match for "${q}"`;
+      jump(1);
+    },
+    open: a => {
+      const name = (a[0] || '').toLowerCase();
+      if (/^portrait/.test(name) && portrait) { portrait.hidden = false; return 'portrait: 1-bit, Atkinson dithered, like MacPaint'; }
+      const file = filesNow().find(f => f.name.toLowerCase() === name);
+      if (!file) return `open: ${name || '?'}: no such file. try ls`;
+      file.a.click();
+      return `opening ${file.name}…`;
+    },
+    man: a => {
+      if (!a.length) return 'What manual page do you want?\nFor example, try "man tuan".';
+      if (/^tuan$/i.test(a[a.length - 1])) { faceOn({ back: false }); return 'TUAN(1): you are reading it.'; }
+      return `No manual entry for ${a.join(' ')}`;
+    },
+    top: () => { top(); },
+    flip: () => { flip(); },
+    dyno: () => { flip(); later(120, flip); },
+    lang: a => a[0] ? (setLang(a[0].toLowerCase()) ? undefined : `lang: ${a[0]}: not here. try ${LANGS.join(' or ')}`)
+                    : `${lang} (${LANGS.join(', ')} available)`,
+    contact: () => { contact.click(); },
+    print: () => { later(50, () => window.print()); return 'printing…'; },
+    uptime: () => stats.textContent,
+    clear: () => '',
+    echo: a => a.join(' '),
+    pwd: () => '/home/tuan/cv',
+    cd: () => 'cd: this is the only directory worth visiting',
+    date: () => new Date().toString(),
+    uname: () => 'TuanOS 1.0 (1-bit, mono) GNU/CV',
+    exit: () => 'there is no exit from a CV. try [c] to write to me',
+    hire: () => 'hire: permission denied. try: sudo hire tuan',
+    sudo: a => {
+      if (a[0] !== 'hire') return `recruiter is not in the sudoers file. This incident will be reported.`;
+      say('[sudo] password for recruiter: ');
+      later(500, () => say('[sudo] password for recruiter: ********'));
+      later(1100, () => say('✓ permission granted. opening your mail app…', 'dyno'));
+      later(1800, () => { window.location.href = contact.href; });
+    },
+    rm: () => 'rm: cannot remove: read-only CV',
+    vim: () => 'no editor here, the CV is final. (and you would never get out)',
+  };
+  Object.assign(COMMANDS, { less: COMMANDS.cat, more: COMMANDS.cat, mail: COMMANDS.contact,
+    logout: COMMANDS.exit, vi: COMMANDS.vim, nano: COMMANDS.vim, emacs: COMMANDS.vim, ':q': COMMANDS.exit,
+    find: COMMANDS.grep, xdg_open: COMMANDS.open });
+
+  function run(line){
+    const [name, ...args] = line.trim().split(/\s+/);
+    if (!name) return;
+    const fn = COMMANDS[name] || COMMANDS[name.toLowerCase()];
+    const out = fn ? fn(args) : `${name}: command not found. try help`;
+    if (out !== undefined) { said = null; say(out); }
+  }
+
+  function complete(){
+    const parts = cmd.value.split(/\s+/), last = parts[parts.length - 1].toLowerCase();
+    const pool = parts.length === 1 ? Object.keys(COMMANDS)
+      : /^(cat|less|more)$/.test(parts[0]) ? sectionsNow().map(s => s.dataset.key)
+      : parts[0] === 'open' ? filesNow().map(f => f.name).concat(portrait ? ['portrait'] : [])
+      : parts[0] === 'lang' ? LANGS
+      : parts[0] === 'man'  ? ['tuan'] : [];
+    const found = pool.filter(w => w.toLowerCase().startsWith(last));
+    if (found.length === 1) { parts[parts.length - 1] = found[0]; cmd.value = parts.join(' ') + ' '; }
+    else if (found.length) { said = null; say(found.join('  ')); }
+  }
+
+  cmd.addEventListener('input', () => {
+    if (mode !== 'search') return;
+    const n = find(cmd.value);
+    said = null;
+    say(cmd.value.trim().length < 2 ? 'type to highlight · enter to jump · esc to cancel'
+        : n ? `${n} match${n > 1 ? 'es' : ''} · enter to jump` : 'no match');
+  });
+  cmd.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Escape') { if (mode === 'search') clearHits(); closeLine(); idle(); return; }
+    if (e.key === 'Enter') {
+      if (mode === 'search') { closeLine(); if (hits.length) { hitAt = -1; jump(1); } else { said = null; say('no match'); } return; }
+      const line = cmd.value;
+      if (line.trim()) { hist.push(line); histAt = hist.length; }
+      cmd.value = '';
+      run(line);
+      return;
+    }
+    if (mode !== 'shell') return;
+    if (e.key === 'Tab') { e.preventDefault(); complete(); }
+    if (e.key === 'ArrowUp' && hist.length)   { e.preventDefault(); histAt = Math.max(0, histAt - 1); cmd.value = hist[histAt]; }
+    if (e.key === 'ArrowDown' && hist.length) { e.preventDefault(); histAt = Math.min(hist.length, histAt + 1); cmd.value = hist[histAt] || ''; }
+  });
+
   addEventListener('keydown', e => {
+    if (e.target === cmd) return;
     if (e.target.closest && e.target.closest('a')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;      /* Ctrl+F, Ctrl+P… stay the browser's */
     const k = e.key;
+    if ((k === ' ' || k === 'Enter') && e.target.closest && e.target.closest('button')) return;  /* the button clicks itself */
     const panning = st.zoom > 1.02 && !e.shiftKey;   /* Shift forces rotation */
     const STEP = 60;
     if (k === 'ArrowLeft')  { if (panning) st.px += STEP; else st.ry -= 8; render(); }
@@ -340,7 +628,43 @@
     if (k === 'f' || k === 'F' || k === ' ') { e.preventDefault(); flip(); }
     if (k === '0') layFlat();
     if (k === 'c' || k === 'C') contact.click();
-    if (k === 'Escape') { document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on')); idle(); }
+    if (k === 'p' || k === 'P') window.print();
+    if ((k === 'l' || k === 'L') && LANGS.length > 1) setLang(otherLang());
+    if (k === '/') { e.preventDefault(); openLine('search'); }
+    if (k === ':' || k === 'Enter') { e.preventDefault(); openLine('shell'); }
+    if (k === 'n') jump(1);
+    if (k === 'N') jump(-1);
+    if (k === 'Escape') { document.querySelectorAll('.tip-on').forEach(n => n.classList.remove('tip-on')); clearHits(); idle(); }
   });
+
+  /* ---- portrait: any photo, dithered to 1 bit with Atkinson's kernel (MacPaint's) ---- */
+  const canvas = portrait && portrait.querySelector('canvas');
+  if (canvas) {
+    const img = new Image();
+    img.onload = () => {
+      const w = 112, h = Math.round(img.height * w / img.width);
+      canvas.width = w; canvas.height = h;
+      const c = canvas.getContext('2d');
+      c.drawImage(img, 0, 0, w, h);
+      let d;
+      try { d = c.getImageData(0, 0, w, h); }
+      catch { portrait.classList.add('ready', 'raw'); return; }   /* opened from file://: canvas is tainted */
+      const px = d.data, g = new Float32Array(w * h);
+      for (let i = 0; i < w * h; i++) g[i] = 0.299 * px[i*4] + 0.587 * px[i*4+1] + 0.114 * px[i*4+2];
+      const SPREAD = [[1,0],[2,0],[-1,1],[0,1],[1,1],[0,2]];   /* 6/8 of the error: Atkinson */
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = y * w + x, old = g[i], v = old < 128 ? 0 : 255, err = (old - v) / 8;
+        g[i] = v;
+        for (const [dx, dy] of SPREAD) {
+          const xx = x + dx, yy = y + dy;
+          if (xx >= 0 && xx < w && yy < h) g[yy * w + xx] += err;
+        }
+      }
+      for (let i = 0; i < w * h; i++) { px[i*4] = px[i*4+1] = px[i*4+2] = g[i]; px[i*4+3] = 255; }
+      c.putImageData(d, 0, 0);
+      portrait.classList.add('ready');
+    };
+    img.src = canvas.dataset.src;
+  }
 
 })();

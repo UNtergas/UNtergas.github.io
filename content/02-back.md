@@ -49,7 +49,7 @@ INSA Centre Val de Loire
 - Spoken: English C1 (TOEIC 970/990), French B2 (DELF B2, 72.5/100), Vietnamese native
 
 ## Interest {grid}
-- Systems & simulation: relational Notion base for esports leagues>>auto-ranking formulas, linked player/team/nation pages
+- Systems & simulation: relational Notion base for esports leagues: auto-ranking formulas, linked player/team/nation pages
 - Bouldering: dyno and slab
 - Philosophy: existentialism, ethics
 - Music: jazz to RnB to Pop, and I like guitar

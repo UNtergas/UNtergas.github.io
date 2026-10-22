@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-lang="en" data-langs="__LANGS__">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -20,6 +20,7 @@ __STYLE__
 <div id="stage">
   <div id="shade"></div>
   <pre id="climber" aria-hidden="true"></pre>
+  __PORTRAIT__
   <div id="sheet">
 __PAGES__
   </div>
@@ -29,10 +30,12 @@ __PAGES__
     <button class="btn" id="flip"><kbd>f</kbd>flip</button>
     <button class="btn" id="dyno"><kbd>f</kbd><kbd>f</kbd>dyno</button>
     <button class="btn" id="reset"><kbd>0</kbd>lay flat</button>
+    <button class="btn" id="search"><kbd>/</kbd>search</button>
+__LANG_BTN__
     <a class="btn" id="contact" href="__MAILTO__"><kbd>c</kbd>contact</a>
 __DOWNLOADS__
   </div>
-  <div id="status"><span id="prompt">tuan@cv:~$</span><span id="msg" aria-live="polite"></span><span id="stats"__UPTIME__></span></div>
+  <div id="status"><span id="prompt">tuan@cv:~$</span><input id="cmd" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Command line: type help" enterkeyhint="go"><span id="msg" aria-live="polite"></span><span id="stats"__UPTIME__></span></div>
 </div>
 <script>
 __SCRIPT__

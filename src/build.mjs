@@ -24,6 +24,8 @@ const inline = s => esc(s)
   .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
   .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
 
+const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 /* ---------- front matter: key: value, [a, b] lists, true/false ---------- */
 function frontMatter(raw){
   const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -62,10 +64,14 @@ function parseBody(body){
 
     if (!line) { flushPara(); continue; }
 
-    const h2 = line.match(/^##\s+(.+?)(?:\s*\{(\w+)\})?$/);
+    /* ## Heading {kind #key}: both optional. The key names the section for the
+       shell (`cat skills`); it defaults to the heading, so translations set it. */
+    const h2 = line.match(/^##\s+(.+?)(?:\s*\{([\w\s#-]*)\})?$/);
     if (h2 && !line.startsWith('###')) {
       flushPara(); entry = null;
-      sec = { heading: h2[1].trim(), kind: h2[2] || 'entries', items: [], rows: [] };
+      const opts = (h2[2] || '').split(/\s+/).filter(Boolean);
+      const key  = (opts.find(o => o.startsWith('#')) || '').slice(1) || slug(h2[1]);
+      sec = { heading: h2[1].trim(), kind: opts.find(o => !o.startsWith('#')) || 'entries', key, items: [], rows: [] };
       sections.push(sec);
       continue;
     }
@@ -120,7 +126,8 @@ const renderSection = s => {
 };
 
 /* ---------- page -> one face of the sheet ---------- */
-function renderPage(page, i, total, site){
+function renderPage(page, i, total, site, lang){
+  const tipOf = c => (lang !== 'en' && c['tip' + lang[0].toUpperCase() + lang.slice(1)]) || c.tip;
   const { meta, sections } = page;
   const titleLines = [].concat(meta.title || 'Untitled').map(esc).join('<br>');
   const stamp = meta.stamp
@@ -128,15 +135,15 @@ function renderPage(page, i, total, site){
     : '';
   const contact = meta.contact === true
     ? `<p class="meta">${(site.contact || []).map(c => c.href
-        ? `<a href="${esc(c.href)}"${c.tip ? ` data-tip="${esc(c.tip)}"` : ''}>${esc(c.text)}</a>`
-        : `<span${c.tip ? ` tabindex="0" data-tip="${esc(c.tip)}"` : ''}>${esc(c.text)}</span>`).join('')}</p>`
+        ? `<a href="${esc(c.href)}"${tipOf(c) ? ` data-tip="${esc(tipOf(c))}"` : ''}>${esc(c.text)}</a>`
+        : `<span${tipOf(c) ? ` tabindex="0" data-tip="${esc(tipOf(c))}"` : ''}>${esc(c.text)}</span>`).join('')}</p>`
     : '';
 
   const man = site.man
     ? `<p class="man-head"><span>${esc(site.man[0])}</span><span>${esc(site.man[1])}</span><span>${esc(site.man[0])}</span></p>`
     : '';
   const win = `<div class="titlebar" aria-hidden="true"><span class="box close" title="close"></span><span class="wtitle">${i === 0 ? 'cv.man' : 'activities.man'} ${i + 1}/${total}</span><span class="box zoom" title="lay flat"></span></div>`;
-  return `<article class="face ${i === 0 ? 'front' : 'back'}">
+  return `<article class="face ${i === 0 ? 'front' : 'back'}" data-lang="${lang}" lang="${lang}">
       ${win}
       ${man}
       ${stamp}
@@ -144,7 +151,7 @@ function renderPage(page, i, total, site){
         <h1>${titleLines}</h1>
         ${meta.role ? `<p class="role">${inline(meta.role)}</p>` : ''}
         ${contact}
-        ${sections.map(s => `<section><h2>${esc(s.heading)}</h2>${renderSection(s)}</section>`).join('')}
+        ${sections.map(s => `<section data-key="${esc(s.key)}"><h2>${esc(s.heading)}</h2>${renderSection(s)}</section>`).join('')}
       </div>
       <p class="page-no">${i + 1} / ${total}</p>
       ${meta.sign ? `<p class="sign">${esc(meta.sign)}</p>` : ''}
@@ -154,15 +161,23 @@ function renderPage(page, i, total, site){
 /* ---------- build ---------- */
 function build(){
   const site  = JSON.parse(readFileSync(join(CONTENT, 'site.json'), 'utf8'));
-  const files = readdirSync(CONTENT).filter(f => f.endsWith('.md')).sort();
 
-  const pages = files.map(f => {
-    const [meta, body] = frontMatter(readFileSync(join(CONTENT, f), 'utf8'));
+  /* content/*.md is English; content/<lang>/*.md is a translation of the same sheet */
+  const readPages = dir => readdirSync(dir).filter(f => f.endsWith('.md')).sort().map(f => {
+    const [meta, body] = frontMatter(readFileSync(join(dir, f), 'utf8'));
     return { meta, sections: parseBody(body), file: f };
   });
+  const langs = { en: readPages(CONTENT) };
+  for (const d of readdirSync(CONTENT, { withFileTypes: true }))
+    if (d.isDirectory() && /^[a-z]{2}$/.test(d.name)) langs[d.name] = readPages(join(CONTENT, d.name));
 
-  if (pages.length > 2)
-    console.warn(`! ${pages.length} pages found, a sheet has 2 faces. Ignored: ${pages.slice(2).map(p => p.file).join(', ')}`);
+  for (const [lang, pages] of Object.entries(langs))
+    if (pages.length > 2)
+      console.warn(`! ${lang}: ${pages.length} pages found, a sheet has 2 faces. Ignored: ${pages.slice(2).map(p => p.file).join(', ')}`);
+
+  /* optional photo, dithered in the browser into a 1-bit window */
+  const portrait = site.portrait && existsSync(join(CONTENT, site.portrait)) ? site.portrait : '';
+  if (site.portrait && !portrait) console.warn(`! missing content/${site.portrait} — portrait not rendered`);
 
   /* download buttons point at PDFs living in content/, never at the 3D page */
   const downloads = (site.downloads || []).filter(d => {
@@ -172,7 +187,7 @@ function build(){
   });
   /* ?v=<content hash>: a new PDF gets a new URL, so browsers skip their cached copy */
   const buttons = downloads.map(d =>
-    `  <a class="btn download" href="${esc(d.file)}?v=${createHash('sha1').update(readFileSync(join(CONTENT, d.file))).digest('hex').slice(0, 8)}" target="_blank" rel="noopener"${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}>${esc(d.label)}</a>`
+    `  <a class="btn download" href="${esc(d.file)}?v=${createHash('sha1').update(readFileSync(join(CONTENT, d.file))).digest('hex').slice(0, 8)}" target="_blank" rel="noopener"${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}${d.tipFr ? ` data-tip-fr="${esc(d.tipFr)}"` : ''}>${esc(d.label)}</a>`
   ).join('\n');
 
   const html = readFileSync(join(SRC, 'template.html'), 'utf8')
@@ -186,17 +201,24 @@ function build(){
     .replace('__UPTIME__', site.uptime
       ? ` data-since="${esc(site.uptime.since)}" data-until="${esc(site.uptime.until || '')}" data-label="${esc(site.uptime.label || '')}"`
       : '')
-    .replace('__PAGES__',     pages.slice(0, 2).map((p, i) => renderPage(p, i, pages.length, site)).join('\n'));
+    .replace('__LANGS__',     esc(Object.keys(langs).join(' ')))
+    .replace('__LANG_BTN__',  Object.keys(langs).length > 1
+      ? `  <button class="btn" id="lang"><kbd>l</kbd><span>${esc(Object.keys(langs)[1].toUpperCase())}</span></button>` : '')
+    .replace('__PORTRAIT__',  portrait
+      ? `<figure id="portrait" aria-label="${esc(site.portraitAlt || 'Portrait')}"><div class="titlebar"><span class="box close"></span><span class="wtitle">tuan.pict</span></div><canvas data-src="${esc(portrait)}"></canvas></figure>` : '')
+    .replace('__PAGES__',     Object.entries(langs).map(([lang, pages]) =>
+      pages.slice(0, 2).map((p, i) => renderPage(p, i, Math.min(pages.length, 2), site, lang)).join('\n')).join('\n'));
 
   mkdirSync(DIST, { recursive: true });
   writeFileSync(join(DIST, 'index.html'), html);
 
   /* copy every PDF plus the optional extras */
   const assets = readdirSync(CONTENT).filter(f => f.endsWith('.pdf'))
-    .concat(['og.png', 'CNAME'].filter(f => existsSync(join(CONTENT, f))));
+    .concat(['og.png', 'CNAME'].filter(f => existsSync(join(CONTENT, f))))
+    .concat(portrait ? [portrait] : []);
   for (const a of assets) copyFileSync(join(CONTENT, a), join(DIST, a));
 
-  console.log(`built dist/index.html — ${files.length} page(s), ${downloads.length} download(s), ${(html.length/1024).toFixed(1)} kB`);
+  console.log(`built dist/index.html — ${Object.entries(langs).map(([l, p]) => `${l}: ${p.length}`).join(', ')} page(s), ${downloads.length} download(s), ${(html.length/1024).toFixed(1)} kB`);
 }
 
 build();
@@ -205,5 +227,5 @@ if (process.argv.includes('--watch')) {
   console.log('watching content/ and src/ ...');
   let t;
   for (const dir of [CONTENT, SRC])
-    watch(dir, () => { clearTimeout(t); t = setTimeout(() => { try { build(); } catch (e) { console.error(e.message); } }, 80); });
+    watch(dir, { recursive: true }, () => { clearTimeout(t); t = setTimeout(() => { try { build(); } catch (e) { console.error(e.message); } }, 80); });
 }

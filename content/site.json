@@ -5,12 +5,14 @@
   "contact": [
     {
       "text": "Paris, France",
-      "tip": "On site in Paris, or remote across Europe."
+      "tip": "On site in Paris, or remote across Europe.",
+      "tipFr": "Sur site à Paris, ou à distance en Europe."
     },
     {
       "text": "nguyenanhtuan200241@gmail.com",
       "href": "mailto:nguyenanhtuan200241@gmail.com",
-      "tip": "Fastest way to reach me."
+      "tip": "Fastest way to reach me.",
+      "tipFr": "Le moyen le plus rapide de me joindre."
     },
     {
       "text": "+33 6 69 08 83 59",
@@ -25,7 +27,8 @@
     {
       "label": "CV English (PDF)",
       "file": "cv-en.pdf",
-      "tip": "The printable one-pager."
+      "tip": "The printable one-pager.",
+      "tipFr": "La version anglaise, à imprimer."
     },
     {
       "label": "CV Français (PDF)",
@@ -41,5 +44,7 @@
     "since": "2025-02",
     "until": "",
     "label": "snowpack"
-  }
+  },
+  "portrait": "portrait.jpg",
+  "portraitAlt": "Nguyen Anh Tuan"
 }

@@ -1,35 +1,111 @@
-# CV as a sheet of paper
-![alt text](image.png)
+# CV as a man page
 
-A one-page site: an A4 sheet floating in 3D that you can spin, zoom and flip.
+![The CV: an A4 sheet in a classic Mac window, a key bar and a terminal status line](image.png)
+
+A one-page site: an A4 sheet floating in 3D that you can spin, zoom and flip, styled
+like a terminal app. The sheet is a man page (`TUAN(1)`) in a black-and-white classic
+Macintosh window. Under it, a key bar and a shell-like status line show tips, counters
+and the explanation behind every dotted word.
+
 Content is Markdown. The build turns it into a single static `dist/index.html`.
-No dependencies, no bundler, no framework.
+No dependencies, no bundler, no framework. One font: JetBrains Mono.
+
+## Controls
+
+| Input | Effect |
+|---|---|
+| Drag | turn the sheet (when zoomed in: move it; hold Shift to turn instead) |
+| Scroll, pinch, `+` / `-` | zoom, anchored under the cursor |
+| Arrow keys | turn (when zoomed in: pan) |
+| `f`, Space, double-click | flip to the other face |
+| `f` `f` (twice within 0.7 s) | **dyno**: a 720° spin while an ASCII climber jumps between two holds |
+| `0`, or the window's zoom box | lay flat: face on, back to the fitted size |
+| `c` | contact (opens the mail app) |
+| `/` | search the sheet, like in `man`: matches highlight as you type, Enter jumps |
+| `n` / `N` | next / previous match (zooms onto it, flipping the sheet if needed) |
+| `Enter`, `:`, or click the status line | open the shell (see below) |
+| `l` | switch language (EN ⇄ FR) |
+| `p` | print |
+| Hover / focus / tap a dotted word | its explanation appears in the status line; ASCII charts type themselves out |
+| `Esc` | clear the tip and the search |
+
+Browser shortcuts (Ctrl/Cmd + anything) are left alone.
+
+The status line also counts flips and dynos (kept in `localStorage`) and shows a live
+"uptime" since the current job started. Idle tips rotate in it every few seconds.
+
+## The shell
+
+The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc leaves.
+
+| Command | Does |
+|---|---|
+| `help` | list the commands |
+| `whoami` | name and role |
+| `ls` | sections, PDFs, the portrait |
+| `cat <section>` | zoom onto that section and flash its box (`less`, `more` too) |
+| `grep <word>` | same as `/` search |
+| `open <file>` | download a PDF; `open portrait` brings the photo back |
+| `man tuan` | back to the front page |
+| `top` | the console's CPU, live, before and after the incident fix |
+| `flip`, `dyno`, `lang en\|fr`, `contact`, `print`, `uptime`, `clear` | what they say |
+| `sudo hire tuan` | try it |
+
+Plus the usual suspects (`pwd`, `cd`, `echo`, `date`, `uname`, `exit`, `rm`, `vim`), each with
+a one-line answer. Commands live in `COMMANDS` in `src/sheet.js`; add one by adding a key.
+
+## Languages
+
+`content/*.md` is the English sheet. A folder named with a two-letter code holds a
+translation of the same two faces: `content/fr/01-front.md`, `content/fr/02-back.md`.
+Every language is built into the page; only one is shown and measured at a time.
+
+- The `[l]` key and the `lang` command switch; the choice is remembered.
+- `?lang=fr` in the URL opens the French sheet directly (handy for a French recruiter).
+- Translated sections should keep the English key, so `cat skills` works in both:
+  `## Compétences {grid #skills}`.
+- Tips in `site.json` take a French twin: `"tip": "…", "tipFr": "…"`.
+- The shell itself stays in English. It's a terminal.
+
+## Portrait
+
+Set `"portrait": "portrait.jpg"` in `content/site.json` and put the photo in `content/`.
+The browser dithers it to 1 bit with Atkinson's kernel (the one MacPaint used) and shows it
+in a small `tuan.pict` window left of the sheet, on screens wider than 1180px.
+Any photo works; a well-lit face on a plain background dithers best.
+If the file is missing, the window is left out and the build log says so.
 
 ## Edit
 
 | Want to change | File |
 |---|---|
 | Any CV text | `content/01-front.md`, `content/02-back.md` |
-| Name, email, links, page title, OG image | `content/site.json` |
+| Name, contact row, page title, description, OG image URL | `content/site.json` |
+| Man-page header (`TUAN(1)  Curriculum Vitae  TUAN(1)`) | `content/site.json` → `man` |
+| Uptime counter in the status line | `content/site.json` → `uptime` |
 | Download buttons and the PDFs they serve | `content/site.json` + the PDF files in `content/` |
-| Colours, type, spacing | `src/style.css` |
-| Spin / zoom / flip behaviour | `src/sheet.js` |
-| HTML shell and meta tags | `src/template.html` |
+| Link preview image (1200×630) | `content/og.png` |
+| Colours, type, spacing, window frame | `src/style.css` |
+| French sheet | `content/fr/01-front.md`, `content/fr/02-back.md` |
+| Portrait photo | `content/site.json` → `portrait` + the image in `content/` |
+| Spin / zoom / flip, key bar, status line, dyno, shell, search | `src/sheet.js` |
+| HTML shell, key bar buttons, meta tags | `src/template.html` |
+| Markdown → HTML | `src/build.mjs` |
 
 ```bash
 npm run build   # -> dist/index.html
 npm run dev     # rebuild on every save, then reload dist/index.html
 ```
 
-`dist/` is generated and git-ignored. CI rebuilds it on every push.
+`dist/` is generated and git-ignored. CI rebuilds it on every push to `main`.
 
 ## Markdown grammar
 
 ```md
 ---
-title: [Nguyen, Anh Tuan]      # each item is one line of the big heading
-role: Full-stack engineer      # italic line under the name
-contact: true                  # print the contact row from site.json
+title: [Nguyen Anh Tuan]       # each item is one line of the big heading
+role: Full-stack engineer      # line under the name, printed as "$ Full-stack engineer"
+contact: true                  # print the contact row from site.json, as [links]
 # stamp: [Available, Nov 2026] # round mark; delete or # it out to remove
 # stampTip: Contract ends October 2026.
 sign: Turn the page.           # small italic note, bottom right
@@ -39,55 +115,88 @@ sign: Turn the page.           # small italic note, bottom right
 
 Free prose here.
 
-## Experience                  # default: entries
+## Experience                  # default: entries (key: "experience")
 
-### Role title | 05/2026 — present
-Organisation — city            # first line after the heading = the italic line
+### Role title | 05/2026 - present
+Organisation, city             # first line after the heading = the italic line
 
 - bullet
 - bullet
 
 ## Skills {grid}               # label: value rows
+## Compétences {grid #skills}  # kind and key together: key names it for `cat`
 
 - Backend: Node.js, Express
 ```
+
+Every `##` section is drawn as a TUI box with its name centred in the top border.
+Bullets are `*`, as in a man page.
 
 Inline, in any text:
 
 | Syntax | Result |
 |---|---|
-| `{{term\|explanation}}` | dotted term, tooltip floats above the paper on hover |
+| `{{term\|explanation}}` | dotted term; the explanation shows in the status line |
 | `[label](https://…)` | link |
 | `**bold**`, `*italic*` | bold, italic |
 
-## Downloads
+Tips can hold small ASCII charts, which read well in the monospace status line:
 
-The buttons serve real files, never a print of the 3D page:
-
-```json
-"downloads": [
-  { "label": "CV — English (PDF)", "file": "cv-en.pdf", "tip": "The printable one-pager." },
-  { "label": "CV — Français (PDF)", "file": "cv-fr.pdf" }
-]
+```md
+{{Start-up 2.5 → 1.5 min|start-up time: before ██████████ 2.5 min → after ██████ 1.5 min}}
 ```
 
-Put `cv-en.pdf` and `cv-fr.pdf` in `content/`. Every `.pdf` there is copied to `dist/`.
+## site.json
+
+```json
+{
+  "title": "Nguyen Anh Tuan, Full-stack engineer",
+  "description": "A CV you can spin. TypeScript, Node, React. Paris.",
+  "ogImage": "https://UNtergas.github.io/og.png",
+  "contact": [
+    { "text": "Paris, France", "tip": "On site in Paris, or remote across Europe." },
+    { "text": "me@example.com", "href": "mailto:me@example.com" }
+  ],
+  "downloads": [
+    { "label": "CV English (PDF)", "file": "cv-en.pdf", "tip": "The printable one-pager." }
+  ],
+  "man": ["TUAN(1)", "Curriculum Vitae"],
+  "uptime": { "since": "2025-02", "until": "", "label": "snowpack" },
+  "portrait": "portrait.jpg",
+  "portraitAlt": "Nguyen Anh Tuan"
+}
+```
+
+- `contact`: the first `mailto:` entry is also the target of the `[c] contact` key.
+- `man`: left/right label and centre label of the man-page header. Remove it to hide the header.
+- `uptime`: `since` is `YYYY-MM`. Set `until` when the job ends and the counter freezes.
+  Remove the key to hide it.
+
+## Downloads
+
+The buttons serve real files, never a print of the 3D page.
+Put the PDFs named in `downloads` in `content/`; every `.pdf` there is copied to `dist/`.
+Links get a `?v=<content hash>` suffix, so a new PDF is never served from a stale cache.
 A button whose file is missing is dropped from the page, with a warning in the build log,
 so a recruiter never hits a 404.
 
 ## Sizing
 
 A sheet has two faces, so `content/` holds two `.md` files; more are ignored with a
-warning. Type auto-shrinks from 16px down to 10.5px until a page fits its margins, so bullets can
-be added freely. If text still overflows, that page is genuinely too long — cut it.
+warning. Type auto-shrinks from 16px down to 8.5px until a page fits its margins, so bullets
+can be added freely. If text still overflows, that page is genuinely too long: cut it.
 
-Margins are fixed at 74 / 84 / 112 px of a 720x1018 sheet and scale with it, so they stay
+Margins are fixed at 74 / 84 / 112 px of a 720×1018 sheet and scale with it, so they stay
 proportional at every zoom level. The 112px bottom band holds the page number and the
 sign-off line, which is why body text never reaches the paper edge.
 
-Zoom changes the sheet's width, height and font size — not a CSS `scale()` — so the
+Zoom changes the sheet's width, height and font size, not a CSS `scale()`, so the
 browser re-renders the type at each step instead of stretching pixels. Zoom floor is the
-fitted size; "Lay it flat" animates back to it, square on.
+fitted size; "lay flat" animates back to it, square on. The key bar sits below the stage,
+never on top of the paper.
+
+Printing (`p`, or Ctrl/Cmd+P) prints the current language and drops the window frame, key bar and 3D, and prints both faces as
+plain pages.
 
 ## Deploy
 
@@ -106,6 +215,6 @@ There are no dependencies, so the install step is a no-op.
 Custom domain: on GitHub Pages put a `CNAME` file in `content/` (it gets copied to `dist/`);
 on the others set it in the dashboard and delete the `CNAME` file.
 
-If the site lives under a subpath (`user.github.io/cv/`), everything still works — asset
-links are relative — but set `ogImage` in `content/site.json` to the full URL including
+If the site lives under a subpath (`user.github.io/cv/`), everything still works (asset
+links are relative), but set `ogImage` in `content/site.json` to the full URL including
 the subpath, since Open Graph needs absolute URLs.

@@ -57,7 +57,6 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 | `grep <word>` | same as `/` search |
 | `open <file.pdf>` | download a PDF (sections are not files: `open about` says to use `cat about`) |
 | `man tuan` | back to the front page |
-| `top` | the console's CPU, live, before and after the incident fix |
 | `flip`, `lang en\|fr`, `contact`, `print`, `uptime`, `clear` | what they say |
 | `sudo hire tuan` | try it |
 

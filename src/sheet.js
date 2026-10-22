@@ -206,8 +206,8 @@
   /* the default line says it's a command line; every other tick shows another tip.
      [f][f] (dyno) is deliberately not advertised: it's an easter egg. */
   const CMD_HINT = {
-    en: 'this is a command line · press : then type help, ls, cat skills, top…',
-    fr: 'ceci est une ligne de commande · appuyez sur : puis tapez help, ls, cat skills, top…',
+    en: 'this is a command line · press : then type help, ls, cat skills, grep…',
+    fr: 'ceci est une ligne de commande · appuyez sur : puis tapez help, ls, cat skills, grep…',
   };
   const IDLES = {
     en: [
@@ -289,21 +289,7 @@
       if (n < text.length) setTimeout(type, BARS.test(text[n - 1]) ? 40 : 10);
     })();
   }
-  /* `top`: the console's CPU before and after the incident fix, live */
-  function top(){
-    const id = ++sayId, spark = '▁▂▃▄▅▆▇█', series = [];
-    idling = false; said = null; msg.className = '';
-    let t = 0;
-    (function tick(){
-      if (id !== sayId) return;
-      const before = t < 60;
-      const v = before && t % 10 === 0 ? 0.99 : 0.1 + Math.random() * (before ? 0.08 : 0.1);
-      series.push(v); if (series.length > 30) series.shift();
-      msg.textContent = `top - cpu ${series.map(x => spark[Math.min(7, Math.floor(x * 8))]).join('')} ${String(Math.round(v * 100)).padStart(3)}%  `
-        + (before ? 'before the fix: a spike every 10 min' : 'after the fix: 10-20% max');
-      if (++t < 130) setTimeout(tick, 80);
-    })();
-  }
+
   idle(); showStats();
   setInterval(() => { if (idling) { idleAt++; idle(); } }, 4500);
   setInterval(showStats, 60000);
@@ -583,7 +569,7 @@
 
   const COMMANDS = {
     help: () =>
-      'whoami · ls · cat <section> · grep <word> · open <file> · man tuan · top\n' +
+      'whoami · ls · cat <section> · grep <word> · open <file> · man tuan\n' +
       'flip · lang <' + LANGS.join('|') + '> · contact · print · uptime · clear · exit',
     whoami: () => {
       const f = faceTitle();
@@ -621,7 +607,6 @@
       if (/^tuan$/i.test(a[a.length - 1])) { faceOn({ back: false }); return 'TUAN(1): you are reading it.'; }
       return `No manual entry for ${a.join(' ')}`;
     },
-    top: () => { top(); },
     flip: () => { flip(); },
     dyno: () => { flip(); later(120, flip); },
     lang: a => a[0] ? (setLang(a[0].toLowerCase()) ? undefined : `lang: ${a[0]}: not here. try ${LANGS.join(' or ')}`)

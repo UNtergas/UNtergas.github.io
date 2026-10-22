@@ -21,7 +21,7 @@ No dependencies, no bundler, no framework. One font: JetBrains Mono.
 | `0`, or the window's zoom box | lay flat: face on, back to the fitted size |
 | `c` | contact (opens the mail app) |
 | `/` | search the sheet, like in `man`: matches highlight as you type, Enter jumps |
-| `n` / `N` | next / previous match (zooms onto it, flipping the sheet if needed) |
+| `n` / `N` | next / previous match (zooms onto it, flipping the sheet if needed); while a search has matches the key bar shows prev / next / clear buttons, for phones |
 | `:` (or the `[:] command` key, Enter, or a click on the status line) | type a command (see below); typing a letter without `:` shows how |
 | `l` | switch language (EN ⇄ FR) |
 | `p` | print |

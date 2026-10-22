@@ -469,7 +469,9 @@
 
   /* ---- search: / like in man and less; n and N step through the matches ---- */
   let hits = [], hitAt = -1;
+  const bar = document.getElementById('bar');
   function clearHits(){
+    bar.classList.remove('searching');
     for (const m of sheet.querySelectorAll('mark.hit')) {
       const parent = m.parentNode;
       parent.replaceChild(document.createTextNode(m.textContent), m);
@@ -503,9 +505,10 @@
   function jump(step){
     if (!hits.length) return;
     hitAt = (hitAt + step + hits.length) % hits.length;
+    bar.classList.add('searching');
     hits.forEach((h, i) => h.classList.toggle('on', i === hitAt));
     focusEl(hits[hitAt], 1.9);
-    say(`match ${hitAt + 1} of ${hits.length} · [n] next · [N] previous · [esc] clear`);
+    say(`match ${hitAt + 1} of ${hits.length}` + (matchMedia('(hover: none)').matches ? '' : ' · [n] next · [N] previous · [esc] clear'));
   }
 
   /* ---- contact, window boxes ---- */
@@ -559,6 +562,9 @@
   cmd.addEventListener('blur', closeLine);
   status.addEventListener('click', e => { if (!mode && !e.target.closest('a,button')) openLine('shell'); });
   document.getElementById('search').onclick = () => openLine('search');
+  document.getElementById('next').onclick = () => jump(1);
+  document.getElementById('prev').onclick = () => jump(-1);
+  document.getElementById('clear').onclick = () => { clearHits(); idle(); };
   document.getElementById('shell').onclick = () => openLine('shell');
 
   const faceTitle = () => sheet.querySelector('.face.front:not([hidden])');

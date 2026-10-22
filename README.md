@@ -33,15 +33,15 @@ Browser shortcuts (Ctrl/Cmd + anything) are left alone.
 The status line's default text says it is a command line (press `:`); other tips
 alternate with it.
 
-**Easter egg, not advertised on the page:** `f` `f` (twice within 0.7 s), or flinging the sheet
-a full turn inside a second, is a **dyno**: the sheet spins 720° while an ASCII climber goes up
+**Easter egg, not advertised on the page:** two flips within 0.7 s (`f` `f`, or the flip
+button twice), or a hard fling by mouse (600° inside a second, which an ordinary drag never
+reaches), is a **dyno**: the sheet spins 720° while an ASCII climber goes up
 a wall as tall as the screen, hold to hold, and tops out. The `dyno` command does it too,
 but `help` doesn't list it.
 
 The status line also counts flips and dynos (kept in `localStorage`). They count what the
 sheet does, not which key was pressed: every time the other face comes round is a flip
-(key, drag, search, `cat`…), and a full turn inside one second is a dyno, flung by hand
-included. It shows a live
+(key, drag, search, `cat`…), and dynos are counted however they're triggered. It shows a live
 "uptime" since the current job started. Idle tips rotate in it every few seconds.
 
 ## The shell

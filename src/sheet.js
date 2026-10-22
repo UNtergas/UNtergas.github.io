@@ -230,8 +230,10 @@
   let flips = store.get('cv.flips'), dynos = store.get('cv.dynos');
 
   /* Counted from the sheet itself, however it turned (key, drag, search, cat…):
-     every time the other face comes round is a flip; a full turn inside one
-     second is a dyno, flung by hand included. */
+     every time the other face comes round is a flip. A dyno is two flips inside
+     0.7 s ([f][f], or the flip button twice), or a hard fling by hand: 600° inside
+     one second, which an ordinary drag never reaches. */
+  const DYNO_SPIN = 600;
   let shown = null, spins = [], dynoing = false, lastDyno = 0;
   function countDyno(){
     lastDyno = performance.now(); spins = [];
@@ -247,7 +249,7 @@
     }
     spins.push([now, T]);
     while (now - spins[0][0] > 1000) spins.shift();
-    if (!dynoing && now - lastDyno > 1500 && Math.abs(T - spins[0][1]) >= 360) countDyno();
+    if (!dynoing && now - lastDyno > 1500 && Math.abs(T - spins[0][1]) >= DYNO_SPIN) countDyno();
   };
 
   /* uptime from data-since="YYYY-MM" (and data-until, once the job ends) */
@@ -633,7 +635,7 @@
   };
   Object.assign(COMMANDS, { less: COMMANDS.cat, more: COMMANDS.cat, mail: COMMANDS.contact,
     logout: COMMANDS.exit, vi: COMMANDS.vim, nano: COMMANDS.vim, emacs: COMMANDS.vim, ':q': COMMANDS.exit,
-    find: COMMANDS.grep, xdg_open: COMMANDS.open });
+    find: COMMANDS.grep });
 
   function run(line){
     const [name, ...args] = line.trim().split(/\s+/);

@@ -184,11 +184,11 @@ section.flash{animation:flash .5s steps(1) 3}
   white-space:pre;cursor:help;flex:none}
 .avatar:hover,.avatar:focus-visible,.avatar.tip-on{background:none;color:var(--ink);outline:none}
 /* ---------- small screens ---------- */
-/* Phones: a long, narrow sheet (about the same area as A4). The text column is
-   narrower, so zoomed to the screen width the type is about half again bigger,
-   and you read by panning down. */
+/* Phones: a narrower, slightly longer sheet shaped like the phone's stage, so it
+   fills the screen width with little black around it, and zoomed to the width
+   the type is bigger than on A4. */
 @media (max-width:600px){
-  :root{--sw:480; --sh:1500; --mt:66; --mx:34; --mb:100}
+  :root{--sw:600; --sh:1080; --mt:66; --mx:40; --mb:100; --fill:.97}
 }
 /* iOS zooms the page into any focused field under 16px */
 @media (hover:none){ #cmd{font-size:16px} }

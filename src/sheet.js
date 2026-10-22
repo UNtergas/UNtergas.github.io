@@ -31,7 +31,8 @@
     SW = parseFloat(cs.getPropertyValue('--sw')) || 720;
     SH = parseFloat(cs.getPropertyValue('--sh')) || 1018;
     const w = stage.clientWidth, h = stage.clientHeight;
-    base = Math.max(0.2, Math.min(w * 0.9 / SW, h * 0.94 / SH));
+    const fill = parseFloat(cs.getPropertyValue('--fill')) || 0.9;   /* share of the width the sheet may take */
+    base = Math.max(0.2, Math.min(w * fill / SW, h * 0.94 / SH));
   }
 
   /* Pan bounds are measured, not predicted: the sheet is tilted inside a

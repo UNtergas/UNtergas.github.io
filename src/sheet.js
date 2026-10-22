@@ -596,6 +596,7 @@
       const q = a.filter(x => !x.startsWith('-')).join(' ');
       if (!q) return 'usage: grep <word>';
       if (!find(q)) return `grep: no match for "${q}"`;
+      closeLine();                                   /* hand the keys back, so n / N / esc work */
       jump(1);
     },
     open: a => {

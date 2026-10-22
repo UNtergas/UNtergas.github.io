@@ -50,7 +50,8 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 
 | Command | Does |
 |---|---|
-| `help` | list the commands |
+| `help` | every command with a one-line, plain-language description (two columns on wide screens; the main eight plus an "also" line on phones) |
+| `<command> --help`, `-h`, `help <command>`, `man <command>` | what one command does, with examples to type (`cd --help`) |
 | `whoami` | name and role |
 | `ls` | sections and PDFs; inside a section (after `cd`), its files: entries named after the role or project (with their dates), one file per skill / interest row, `profile.txt` for About. `ls <section>`, `ls ..` work anywhere, and the view follows what is listed (the prompt stays put) |
 | `cd <section>` | go into that section: the sheet turns and zooms onto it, its box flashes, and the prompt becomes `tuan@cv:~/experience$` (`experience`, `experience/`, `../skills`, `~/skills`, `/home/tuan/cv/skills` all work) |

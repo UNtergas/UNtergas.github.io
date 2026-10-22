@@ -649,10 +649,46 @@
     return pdf ? { pdf } : null;
   }
 
+  /* help for people who have never used a shell: a one-line summary per command for
+     `help`, and usage with examples for `<command> --help`, `help <command>`, `man <command>`.
+     Only listed commands appear; the jokes and the dyno stay hidden. */
+  const HELP = {
+    ls:      ['ls [section]',  "list what's here",
+              'ls              the parts of the CV (and the PDFs)\nls experience   what is inside a part: its files\nInside a part (after cd), plain ls lists it.'],
+    cd:      ['cd <section>',  'go into a part of the CV',
+              'cd experience   the sheet turns and zooms there\ncd ../skills    move to another part\ncd ..           back to the whole page (so does the 0 key)'],
+    cat:     ['cat <file>',    'read one item',
+              'cat full-stack-engineer   (inside experience) one job, its highlights\ncat skills/backend        one row of skills\ncat about/profile.txt     the profile paragraph\nUse ls to see the file names. Tab completes them.'],
+    grep:    ['grep <word>',   'find a word on the CV',
+              'grep node       highlights every match and jumps to the first\nThen n / N (or the next / prev buttons) step through them; esc clears.\nSame as pressing /.'],
+    open:    ['open <pdf>',    'download the CV as a PDF',
+              'open cv-en.pdf  English\nopen cv-fr.pdf  French'],
+    man:     ['man tuan',      'back to the first page', 'man tuan        the front page, laid flat'],
+    lang:    ['lang en|fr',    'switch language', 'lang fr         the CV in French (the l key does it too)\nlang en         back to English'],
+    contact: ['contact',       'write me an email', 'contact         opens your mail app (the c key does it too)'],
+    flip:    ['flip',          'turn the sheet over', 'flip            same as the f key or a double-click on the sheet'],
+    print:   ['print',         'print the CV', 'print           prints the current language (the p key does it too)'],
+    whoami:  ['whoami',        'who this is', 'whoami          name and role'],
+    pwd:     ['pwd',           'where you are', 'pwd             the part of the CV you are in (see cd)'],
+    clear:   ['clear',         'clear this line', 'clear           empties the status line'],
+    help:    ['help [command]','this list', 'help            every command\nhelp cd         one command in detail (same as cd --help)'],
+  };
+  const helpFor = name => {
+    const h = HELP[name];
+    return h ? `${h[0]}  ·  ${h[1]}\n\n${h[2]}` : `${name}: no help for that. try help`;
+  };
+  function helpList(){
+    const rows = Object.values(HELP).map(([u, d]) => u.padEnd(16) + d);
+    const narrow = matchMedia('(max-width: 820px)').matches;
+    const tip = 'type <command> --help for details, e.g. cd --help';
+    /* phones: the main eight in full, the rest on one line, so the bar stays short */
+    if (narrow) return rows.slice(0, 8).join('\n') + '\nalso: ' + Object.keys(HELP).slice(8).join(' · ') + '\n' + tip;
+    const half = Math.ceil(rows.length / 2), w = Math.max(...rows.map(r => r.length)) + 4;
+    return rows.slice(0, half).map((r, i) => r.padEnd(w) + (rows[half + i] || '')).join('\n') + '\n' + tip;
+  }
+
   const COMMANDS = {
-    help: () =>
-      'whoami · ls · cd <section> · cat <file> · grep <word> · open <pdf> · man tuan\n' +
-      'flip · lang <' + LANGS.join('|') + '> · contact · print · uptime · clear · exit',
+    help: a => a[0] ? helpFor(a[0].toLowerCase()) : helpList(),
     whoami: () => {
       const f = faceTitle();
       return `${f.querySelector('h1').textContent} · ${f.querySelector('.role').textContent}`;
@@ -717,6 +753,7 @@
     man: a => {
       if (!a.length) return 'What manual page do you want?\nFor example, try "man tuan".';
       if (/^tuan$/i.test(a[a.length - 1])) { goHome(); faceOn({ back: false }); return 'TUAN(1): you are reading it.'; }
+      if (HELP[a[0].toLowerCase()]) return helpFor(a[0].toLowerCase());
       return `No manual entry for ${a.join(' ')}`;
     },
     flip: () => { flip(); },
@@ -751,7 +788,10 @@
     const [name, ...args] = line.trim().replace(/^:(?!q$)/, '').split(/\s+/);   /* ":help" works too; :q stays a joke */
     if (!name) return;
     const fn = COMMANDS[name] || COMMANDS[name.toLowerCase()];
-    const out = fn ? fn(args) : `${name}: command not found. try help`;
+    const asksHelp = args.some(x => x === '--help' || x === '-h');
+    const out = !fn ? `${name}: command not found. try help`
+      : asksHelp ? helpFor(name.toLowerCase())
+      : fn(args);
     if (out !== undefined) { said = null; say(out); }
   }
 

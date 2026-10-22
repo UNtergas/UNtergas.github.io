@@ -117,7 +117,7 @@ const renderSection = s => {
   const paras = (s.paras || []).map(p => `<p class="about">${inline(p)}</p>`).join('');
   const items = s.items.map(e => `
       <div class="entry"${e.tip ? ` tabindex="0" data-tip="${esc(e.tip)}"` : ''}>
-        <div class="entry-head"><strong>${inline(e.role)}</strong><span class="when">${esc(e.when)}</span></div>
+        <div class="entry-head"><strong>${inline(e.role)}</strong><span class="when" data-when="${esc(e.when)}"></span></div>
         ${e.where ? `<p class="where">${inline(e.where)}</p>` : ''}
         ${(e.paras || []).map(p => `<p>${inline(p)}</p>`).join('')}
         ${e.bullets.length ? `<ul>${e.bullets.map(b => `<li>${inline(b)}</li>`).join('')}</ul>` : ''}

@@ -658,7 +658,7 @@
         const t = (b ? b.textContent : li.textContent).trim().replace(/\.$/, '');
         return '* ' + (t.length > 70 ? t.slice(0, 68) + '…' : t);
       });
-      add(slug(role.split(',')[0]), { el: e, when: ((e.querySelector('.when') || {}).textContent || '').trim(),
+      add(slug(role.split(',')[0]), { el: e, when: ((e.querySelector('.when') || {}).dataset || {}).when || '',
         text: [role, where.trim()].filter(Boolean).join(' · ') + (heads.length ? '\n' + heads.join('\n') : '') });
     }
     for (const b of sec.querySelectorAll('.grid > b'))

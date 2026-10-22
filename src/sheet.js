@@ -346,15 +346,16 @@
     const lh = parseFloat(getComputedStyle(climber).fontSize) * 1.15;
     const rows = Math.max(12, Math.floor((stage.clientHeight - 40) / lh));
     const holds = [];
-    for (let r = rows - 4, i = 0; r >= 1; r -= 6, i++) holds.push([r, i % 2 ? WALL - 3 : 2]);
+    const HOLDS = 8, gap = (rows - 5) / (HOLDS - 1);   /* always 8 holds, spread over the full height */
+    for (let i = 0; i < HOLDS; i++) holds.push([Math.round(rows - 4 - i * gap), i % 2 ? WALL - 3 : 2]);
     const frames = [];                                    /* [fig, row, col, ms] */
     holds.forEach(([r, c], i) => {
-      frames.push(['hang', r + 1, c - 1, 260]);
+      frames.push(['hang', r + 1, c - 1, 110]);
       const next = holds[i + 1];
       if (!next) return;
-      frames.push(['crouch', r + 1, c - 1, 140]);
+      frames.push(['crouch', r + 1, c - 1, 60]);
       for (let k = 1; k <= 3; k++)
-        frames.push(['fly', Math.round(r + 1 + (next[0] - r) * k / 4), Math.round(c - 1 + (next[1] - c) * k / 4), 80]);
+        frames.push(['fly', Math.round(r + 1 + (next[0] - r) * k / 4), Math.round(c - 1 + (next[1] - c) * k / 4), 40]);
     });
     climber.classList.add('on');
     let i = 0, hold = 0;
@@ -368,7 +369,7 @@
       } else {
         climber.textContent = wallFrame(rows, holds, 'top', 0, 1, true);
         say('dyno! topped out.', 'dyno');
-        setTimeout(() => { if (id === climbId) { climber.classList.remove('on'); idle(); } }, 2400);
+        setTimeout(() => { if (id === climbId) { climber.classList.remove('on'); idle(); } }, 1800);
       }
     })();
   }

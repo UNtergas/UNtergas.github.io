@@ -401,13 +401,13 @@
   /* face on: square to the viewer, on a given face (or the nearest one) and zoom.
      lay flat = face on, zoomed back out to fit. */
   let faceAnim = null;
-  function faceOn({ back, zoom = 1, done } = {}){
+  function faceOn({ back, zoom = 1, pan = { px:0, py:0 }, done } = {}){
     anim = null;                                     /* stop a flip in progress */
     const T = st.ry + st.flip, off = back ? 180 : 0;
     const target = back === undefined ? Math.round(T / 180) * 180 : off + Math.round((T - off) / 360) * 360;
     const f = { rx:st.rx, ry:st.ry, z:st.zoom, px:st.px, py:st.py }, ry1 = target - st.flip;
     st.vx = st.vy = 0;
-    if (reduce) { st.rx = 0; st.ry = ry1; st.zoom = zoom; st.px = st.py = 0; render(); if (done) done(); return; }
+    if (reduce) { st.rx = 0; st.ry = ry1; st.zoom = zoom; st.px = pan.px; st.py = pan.py; render(); if (done) done(); return; }
     const id = faceAnim = {}, t0 = performance.now();
     (function step(now){
       if (faceAnim !== id) return;
@@ -415,8 +415,8 @@
       st.rx = f.rx * (1 - e);
       st.ry = f.ry + (ry1 - f.ry) * e;
       st.zoom = f.z + (zoom - f.z) * e;
-      st.px = f.px * (1 - e);
-      st.py = f.py * (1 - e);
+      st.px = f.px + (pan.px - f.px) * e;
+      st.py = f.py + (pan.py - f.py) * e;
       render();
       if (k < 1) requestAnimationFrame(step); else if (done) done();
     })(t0);
@@ -436,13 +436,27 @@
       if (k < 1) requestAnimationFrame(step);
     })(t0);
   }
+  /* where the sheet must be panned for el to sit mid-stage once it is face on at
+     `zoom`: from layout offsets, which scale linearly with zoom and ignore rotation.
+     With no pan, a sheet smaller than the stage sits centred; a bigger one starts
+     at the stage's top / left edge (the grid track grows to fit it). */
+  function panFor(el, zoom){
+    const face = el.closest('.face');
+    let x = el.offsetWidth / 2, y = el.offsetHeight / 2, n = el;
+    while (n && n !== face) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+    const f = zoom / st.zoom, W = stage.clientWidth, H = stage.clientHeight;
+    const w = SW * base * zoom, h = SH * base * zoom;
+    const left0 = Math.max(0, (W - w) / 2), top0 = Math.max(0, (H - h) / 2);
+    return { px: W / 2 - left0 - x * f, py: H / 2 - top0 - y * f };
+  }
   function focusEl(el, zoom){
     const back = !!el.closest('.back');
     /* already square on that face at that zoom (n / N between matches): just slide
        there. Going through faceOn would pan back to the middle first. */
     const off = ((st.ry + st.flip - (back ? 180 : 0)) % 360 + 540) % 360 - 180;
     if (Math.abs(off) < 0.5 && Math.abs(st.rx) < 0.5 && Math.abs(st.zoom - zoom) < 0.05 * zoom) { centreOn(el); return; }
-    faceOn({ back, zoom, done: () => centreOn(el) });
+    /* turning: pan toward the target during the turn, then a final small correction */
+    faceOn({ back, zoom, pan: panFor(el, zoom), done: () => centreOn(el) });
   }
 
   /* zoom until a whole section fills the stage, then flash its box */
@@ -643,7 +657,7 @@
     find: COMMANDS.grep });
 
   function run(line){
-    const [name, ...args] = line.trim().split(/\s+/);
+    const [name, ...args] = line.trim().replace(/^:(?!q$)/, '').split(/\s+/);   /* ":help" works too; :q stays a joke */
     if (!name) return;
     const fn = COMMANDS[name] || COMMANDS[name.toLowerCase()];
     const out = fn ? fn(args) : `${name}: command not found. try help`;

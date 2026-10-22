@@ -197,9 +197,10 @@ function build(){
     .replace(/__TITLE__/g,       esc(site.title))
     .replace(/__DESCRIPTION__/g, esc(site.description))
     .replace(/__OG_IMAGE__/g,    esc(site.ogImage || ''))
-    .replace('__STYLE__',     readFileSync(join(SRC, 'style.css'), 'utf8'))
-    .replace('__SCRIPT__',    readFileSync(join(SRC, 'sheet.js'), 'utf8'))
-    .replace('__DOWNLOADS__', buttons)
+    /* () => value: inserted verbatim, so a "$`" or "$&" in the code or CV text stays as written */
+    .replace('__STYLE__',     () => readFileSync(join(SRC, 'style.css'), 'utf8'))
+    .replace('__SCRIPT__',    () => readFileSync(join(SRC, 'sheet.js'), 'utf8'))
+    .replace('__DOWNLOADS__', () => buttons)
     .replace('__MAILTO__', esc(((site.contact || []).find(c => /^mailto:/.test(c.href || '')) || {}).href || '#'))
     .replace('__UPTIME__', site.uptime
       ? ` data-since="${esc(site.uptime.since)}" data-until="${esc(site.uptime.until || '')}" data-label="${esc(site.uptime.label || '')}"`
@@ -207,7 +208,7 @@ function build(){
     .replace('__LANGS__',     esc(Object.keys(langs).join(' ')))
     .replace('__LANG_BTN__',  Object.keys(langs).length > 1
       ? `  <button class="btn" id="lang"><kbd>l</kbd><span>${esc(Object.keys(langs)[1].toUpperCase())}</span></button>` : '')
-    .replace('__PAGES__',     Object.entries(langs).map(([lang, pages]) =>
+    .replace('__PAGES__',     () => Object.entries(langs).map(([lang, pages]) =>
       pages.slice(0, 2).map((p, i) => renderPage(p, i, Math.min(pages.length, 2), site, lang, avatar)).join('\n')).join('\n'));
 
   mkdirSync(DIST, { recursive: true });

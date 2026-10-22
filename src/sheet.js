@@ -206,8 +206,8 @@
   /* the default line says it's a command line; every other tick shows another tip.
      [f][f] (dyno) is deliberately not advertised: it's an easter egg. */
   const CMD_HINT = {
-    en: 'this is a command line · press : then type help, ls, cat skills, grep…',
-    fr: 'ceci est une ligne de commande · appuyez sur : puis tapez help, ls, cat skills, grep…',
+    en: 'this is a command line · press : then type help, ls, cd skills, grep…',
+    fr: 'ceci est une ligne de commande · appuyez sur : puis tapez help, ls, cd skills, grep…',
   };
   const IDLES = {
     en: [
@@ -421,7 +421,7 @@
       if (k < 1) requestAnimationFrame(step); else if (done) done();
     })(t0);
   }
-  const layFlat = () => faceOn();
+  const layFlat = () => { goHome(); faceOn(); };   /* goHome: further down, with the prompt */
 
   /* slide the sheet so el sits in the middle of the stage (correctPan keeps it in bounds) */
   function centreOn(el){
@@ -553,14 +553,18 @@
 
   /* ---- the status line is a shell ---- */
   const cmd = document.getElementById('cmd'), status = document.getElementById('status');
-  const promptEl = document.getElementById('prompt'), PS1 = promptEl.textContent;
+  /* the section you cd'd into shows in the prompt and in pwd; lay flat leaves it */
+  const promptEl = document.getElementById('prompt');
+  let here = '';
+  const ps1 = () => `tuan@cv:~${here ? '/' + here : ''}$`;
+  function goHome(){ here = ''; if (mode !== 'search') promptEl.textContent = ps1(); }
   let mode = null;                                   /* null | 'shell' | 'search' */
   const hist = []; let histAt = 0;
 
   function openLine(m){
     mode = m;
     status.classList.add('typing');
-    promptEl.textContent = m === 'search' ? '/' : PS1;
+    promptEl.textContent = m === 'search' ? '/' : ps1();
     cmd.value = '';
     cmd.focus();
     say(m === 'search' ? 'type to highlight · enter to jump · esc to cancel'
@@ -570,7 +574,7 @@
     if (!mode) return;
     mode = null;
     status.classList.remove('typing');
-    promptEl.textContent = PS1;
+    promptEl.textContent = ps1();
     if (document.activeElement === cmd) cmd.blur();
   }
   cmd.addEventListener('blur', closeLine);
@@ -589,22 +593,40 @@
 
   const COMMANDS = {
     help: () =>
-      'whoami · ls · cat <section> · grep <word> · open <file> · man tuan\n' +
+      'whoami · ls · cd <section> · grep <word> · open <file> · man tuan\n' +
       'flip · lang <' + LANGS.join('|') + '> · contact · print · uptime · clear · exit',
     whoami: () => {
       const f = faceTitle();
       return `${f.querySelector('h1').textContent} · ${f.querySelector('.role').textContent}`;
     },
     ls: () => sectionsNow().map(s => s.dataset.key + '/').concat(filesNow().map(f => f.name)).join('  '),
-    cat: a => {
-      const name = (a[0] || '').replace(/\/$/, '').toLowerCase();
-      if (!name) return 'cat: which one? try ls';
+    cd: a => {
+      /* accepts experience, experience/, ./experience, ~/experience, ../experience */
+      const raw = (a[0] || '').toLowerCase();
+      const name = raw.replace(/^(~\/|\.\.\/|\.\/)+/, '').replace(/\/$/, '');
+      if (!name || /^(~|\.\.|\/|\.)$/.test(raw.replace(/\/$/, '') || '~')) {
+        if (raw === '.' || raw === './') return '';          /* stay where you are */
+        layFlat(); return '';
+      }
       const sec = sectionsNow().find(s => s.dataset.key === name)
                || sectionsNow().find(s => s.dataset.key.startsWith(name));
-      if (sec) { showSection(sec); return `${sec.dataset.key}: on the sheet ↑ · [0] to lay it flat again`; }
-      const file = filesNow().find(f => f.name === name);
+      if (sec) {
+        showSection(sec);
+        here = sec.dataset.key;
+        promptEl.textContent = ps1();
+        return `${here}/ · on the sheet ↑ · cd .. to go back`;
+      }
+      if (filesNow().some(f => f.name.toLowerCase() === name)) return `cd: not a directory: ${name}`;
+      return `cd: no such file or directory: ${name}`;
+    },
+    cat: a => {
+      const name = (a[0] || '').toLowerCase().replace(/^(~\/|\.\.\/|\.\/)+/, '').replace(/\/$/, '');
+      if (!name) return 'usage: cat <file> · sections are directories: try cd <section>';
+      const sec = sectionsNow().find(s => s.dataset.key === name);
+      if (sec) return `cat: ${name}/: Is a directory · try cd ${name}`;
+      const file = filesNow().find(f => f.name.toLowerCase() === name);
       if (file) return `cat: ${name}: binary file, try open ${name}`;
-      return `cat: ${name}: no such section. try ls`;
+      return `cat: ${name}: no such file or directory. try ls`;
     },
     grep: a => {
       const q = a.filter(x => !x.startsWith('-')).join(' ');
@@ -619,12 +641,12 @@
       const file = filesNow().find(f => f.name.toLowerCase() === name);
       if (file) { file.a.click(); return `opening ${file.name}…`; }
       if (sectionsNow().some(s => s.dataset.key === name))
-        return `open: ${name}: not a file, it's a section. use cat ${name}`;
+        return `open: ${name}/: Is a directory · try cd ${name}`;
       return `open: ${name}: no such file. try ls`;
     },
     man: a => {
       if (!a.length) return 'What manual page do you want?\nFor example, try "man tuan".';
-      if (/^tuan$/i.test(a[a.length - 1])) { faceOn({ back: false }); return 'TUAN(1): you are reading it.'; }
+      if (/^tuan$/i.test(a[a.length - 1])) { goHome(); faceOn({ back: false }); return 'TUAN(1): you are reading it.'; }
       return `No manual entry for ${a.join(' ')}`;
     },
     flip: () => { flip(); },
@@ -636,8 +658,7 @@
     uptime: () => stats.textContent,
     clear: () => '',
     echo: a => a.join(' '),
-    pwd: () => '/home/tuan/cv',
-    cd: () => 'cd: this is the only directory worth visiting',
+    pwd: () => '/home/tuan/cv' + (here ? '/' + here : ''),
     date: () => new Date().toString(),
     uname: () => 'TuanOS 1.0 (1-bit, mono) GNU/CV',
     exit: () => 'there is no exit from a CV. try [c] to write to me',
@@ -667,7 +688,7 @@
   function complete(){
     const parts = cmd.value.split(/\s+/), last = parts[parts.length - 1].toLowerCase();
     const pool = parts.length === 1 ? Object.keys(COMMANDS)
-      : /^(cat|less|more)$/.test(parts[0]) ? sectionsNow().map(s => s.dataset.key)
+      : parts[0] === 'cd' ? sectionsNow().map(s => s.dataset.key + '/').concat(here ? ['..'] : [])
       : parts[0] === 'open' ? filesNow().map(f => f.name)
       : parts[0] === 'lang' ? LANGS
       : parts[0] === 'man'  ? ['tuan'] : [];

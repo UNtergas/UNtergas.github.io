@@ -41,7 +41,7 @@ but `help` doesn't list it.
 
 The status line also counts flips and dynos (kept in `localStorage`). They count what the
 sheet does, not which key was pressed: every time the other face comes round is a flip
-(key, drag, search, `cat`…), and dynos are counted however they're triggered. It shows a live
+(key, drag, search, `cd`…), and dynos are counted however they're triggered. It shows a live
 "uptime" since the current job started. Idle tips rotate in it every few seconds.
 
 ## The shell
@@ -53,14 +53,16 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 | `help` | list the commands |
 | `whoami` | name and role |
 | `ls` | sections and PDFs |
-| `cat <section>` | zoom onto that section and flash its box (`less`, `more` too) |
+| `cd <section>` | go into that section: the sheet turns and zooms onto it, its box flashes, and the prompt becomes `tuan@cv:~/experience$` (`experience`, `experience/`, `../skills` all work) |
+| `cd ..`, `cd ~`, `cd` | back to the whole page, laid flat (so does `0`) |
+| `cat <section>` | `Is a directory · try cd <section>`, like a real shell |
 | `grep <word>` | same as `/` search |
-| `open <file.pdf>` | download a PDF (sections are not files: `open about` says to use `cat about`) |
+| `open <file.pdf>` | download a PDF (sections are directories: `open about` says to use `cd about`) |
 | `man tuan` | back to the front page |
 | `flip`, `lang en\|fr`, `contact`, `print`, `uptime`, `clear` | what they say |
 | `sudo hire tuan` | try it |
 
-Plus the usual suspects (`pwd`, `cd`, `echo`, `date`, `uname`, `exit`, `rm`, `vim`), each with
+Plus the usual suspects (`pwd` shows the section you're in, `echo`, `date`, `uname`, `exit`, `rm`, `vim`), each with
 a one-line answer. Commands live in `COMMANDS` in `src/sheet.js`; add one by adding a key.
 
 ## Languages
@@ -71,7 +73,7 @@ Every language is built into the page; only one is shown and measured at a time.
 
 - The `[l]` key and the `lang` command switch; the choice is remembered.
 - `?lang=fr` in the URL opens the French sheet directly (handy for a French recruiter).
-- Translated sections should keep the English key, so `cat skills` works in both:
+- Translated sections should keep the English key, so `cd skills` works in both:
   `## Compétences {grid #skills}`.
 - Tips in `site.json` take a French twin: `"tip": "…", "tipFr": "…"`.
 - The shell itself stays in English. It's a terminal.
@@ -134,7 +136,7 @@ Organisation, city             # first line after the heading = the italic line
 - bullet
 
 ## Skills {grid}               # label: value rows
-## Compétences {grid #skills}  # kind and key together: key names it for `cat`
+## Compétences {grid #skills}  # kind and key together: key names it for `cd`
 
 - Backend: Node.js, Express
 ```

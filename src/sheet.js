@@ -25,14 +25,14 @@
 
   /* how big the sheet is when "laid flat": fills the stage, never the bar */
   /* sheet size at k = 1 comes from CSS (--sw, --sh): A4 on desktop, long and narrow on phones */
-  let SW = 720, SH = 1018;
+  let SW = 720, SH = 1018, fitW = false;
   function measure(){
     const cs = getComputedStyle(root);
     SW = parseFloat(cs.getPropertyValue('--sw')) || 720;
     SH = parseFloat(cs.getPropertyValue('--sh')) || 1018;
     const w = stage.clientWidth, h = stage.clientHeight;
     const fill = parseFloat(cs.getPropertyValue('--fill')) || 0.9;   /* share of the width the sheet may take */
-    const fitW = cs.getPropertyValue('--fitw').trim() === '1';       /* phones: fit the width, scroll the length */
+    fitW = cs.getPropertyValue('--fitw').trim() === '1';       /* phones: fit the width, scroll the length */
     base = Math.max(0.2, fitW ? w * fill / SW : Math.min(w * fill / SW, h * 0.94 / SH));
   }
 
@@ -111,13 +111,30 @@
   /* iOS doesn't shrink the page for the on-screen keyboard, it slides it up under it.
      The body is fixed (CSS) and sized to the visible part instead, so the bar sits on
      the keyboard and the stage is only what you can see. */
-  if (vv) {
-    const pin = () => {
-      if (vv.scale > 1.01) return;                   /* page pinch-zoomed: leave it */
-      document.body.style.height = vv.height + 'px';
-      document.body.style.top = vv.offsetTop + 'px';
-    };
-    vv.addEventListener('resize', pin); vv.addEventListener('scroll', pin); pin();
+  function pin(){
+    if (!vv || vv.scale > 1.01) return;              /* page pinch-zoomed: leave it */
+    document.body.style.height = vv.height + 'px';
+    document.body.style.top = vv.offsetTop + 'px';
+  }
+  if (vv) { vv.addEventListener('resize', pin); vv.addEventListener('scroll', pin); pin(); }
+  /* After the keyboard closes, iOS can skip the last resize event or leave the page
+     shifted, and the bar stays where the keyboard was. So re-read the viewport every
+     frame (and scroll back) until it holds still, then lay out and run what waited. */
+  let waiting = [], settling = false;
+  function settle(fn){
+    if (fn) waiting.push(fn);
+    if (settling) return;
+    settling = true;
+    let h = -1, same = 0, n = 0;
+    (function tick(){
+      window.scrollTo(0, 0); pin();
+      same = vv && Math.abs(vv.height - h) < 1 && vv.offsetTop < 1 ? same + 1 : 0;
+      h = vv ? vv.height : 0;
+      if (!vv || (same > 8 && n > 12) || ++n > 90) {  /* still ~150 ms, at least ~200 ms in, at most ~1.5 s */
+        settling = false; relayout();
+        const w = waiting; waiting = []; w.forEach(f => f());
+      } else requestAnimationFrame(tick);
+    })();
   }
 
   if (!reduce) {
@@ -487,7 +504,7 @@
   /* zoom until a whole section fills the stage, then flash its box */
   function showSection(sec){                         /* any block: section, entry, grid row */
     const h1 = sec.offsetHeight / st.zoom, w1 = sec.offsetWidth / st.zoom;
-    focusEl(sec, clamp(Math.min(0.9 * stage.clientHeight / h1, 0.95 * stage.clientWidth / w1), 1, 2.4));
+    focusEl(sec, fitW ? 1 : clamp(Math.min(0.9 * stage.clientHeight / h1, 0.95 * stage.clientWidth / w1), 1, 2.4));   /* phones: already fits the width; zooming would cut its sides */
     sheet.querySelectorAll('.flash').forEach(n => n.classList.remove('flash')); void sec.offsetWidth; sec.classList.add('flash');
   }
 
@@ -546,7 +563,7 @@
     hitAt = (hitAt + step + hits.length) % hits.length;
     bar.classList.add('searching');
     hits.forEach((h, i) => h.classList.toggle('on', i === hitAt));
-    focusEl(hits[hitAt], 1.9);
+    focusEl(hits[hitAt], fitW ? 1 : 1.9);              /* phones: the sheet already fits the width */
     say(`match ${hitAt + 1} of ${hits.length}` + (matchMedia('(hover: none)').matches ? '' : ' · [n] next · [N] previous · [esc] clear'));
   }
 
@@ -602,7 +619,7 @@
     promptEl.textContent = ps1();
     if (document.activeElement === cmd) cmd.blur();
   }
-  cmd.addEventListener('blur', closeLine);
+  cmd.addEventListener('blur', () => { closeLine(); if (coarse) settle(); });   /* keyboard closed any way: put the page back */
   status.addEventListener('click', e => { if (!mode && !e.target.closest('a,button')) openLine('shell'); });
   document.getElementById('search').onclick = () => openLine('search');
   document.getElementById('next').onclick = () => jump(1);
@@ -809,15 +826,6 @@
     logout: COMMANDS.exit, vi: COMMANDS.vim, nano: COMMANDS.vim, emacs: COMMANDS.vim, ':q': COMMANDS.exit,
     find: COMMANDS.grep });
 
-  /* phones: Enter puts the keyboard away, and the command runs once the page has its
-     full height back, so cd / ls / cat aim at the real stage, not the strip above the keys */
-  function afterKeyboard(fn){
-    if (!vv) return fn();
-    let t;
-    const go = ms => { clearTimeout(t); t = setTimeout(() => { vv.removeEventListener('resize', settle); fn(); }, ms); };
-    const settle = () => go(150);
-    vv.addEventListener('resize', settle); go(400);
-  }
   function run(line){
     const [name, ...args] = line.trim().replace(/^:(?!q$)/, '').split(/\s+/);   /* ":help" works too; :q stays a joke */
     if (!name) return;
@@ -869,13 +877,15 @@
       if (mode === 'search') {
         closeLine();
         const go = () => { if (hits.length) { hitAt = -1; jump(1); } else { said = null; say('no match'); } };
-        if (coarse) afterKeyboard(go); else go();
+        if (coarse) settle(go); else go();
         return;
       }
       const line = cmd.value;
       if (line.trim()) { hist.push(line); histAt = hist.length; }
       cmd.value = '';
-      if (coarse) { closeLine(); afterKeyboard(() => run(line)); } else run(line);
+      /* phones: the keyboard goes away first, and the command runs once the page has its
+         full height back, so cd / ls / cat aim at the real stage, not the strip above the keys */
+      if (coarse) { closeLine(); settle(() => run(line)); } else run(line);
       return;
     }
     if (mode !== 'shell') return;

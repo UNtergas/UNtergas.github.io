@@ -26,7 +26,7 @@ INSA Centre Val de Loire : projet d'école, équipe de six
 
 - J'ai réparti les tâches et laissé à chacun le temps de contribuer. Trois semaines avant l'échéance, j'ai repris la suite en main et écrit {{environ les trois quarts du code|2 598 des quelque 3 413 lignes de la version finale, d'après git blame.}}.
 - Simulation : pathfinding A* pour les routes et les marcheurs, immigrants qui trouvent une parcelle et s'installent, préfecture, ingénieur et puits, risque d'incendie et couches d'eau.
-- Moteur : caméra et minicarte, rendu en couches optimisé pour la fréquence d'images, animations, vitesse de jeu. Python. Code : [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
+- Moteur, optimisé pour le FPS : {{carte pré-rendue une fois|Le sol est dessiné une seule fois dans une image en cache ; chaque image affiche ce cache à la position de la caméra au lieu de redessiner chaque case. Poser un bâtiment ne redessine que sa case dans le cache.}}, seules les cases modifiées redessinées, en 4 couches (sol, marcheurs, bâtiments, aperçu de construction) ; caméra et minicarte, animations, vitesse de jeu. Python. Code : [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
 
 ## Formation {#education}
 

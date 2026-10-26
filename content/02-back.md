@@ -26,7 +26,7 @@ INSA Centre Val de Loire: school project, team of six
 
 - I split the tasks and gave everyone time to contribute. Three weeks before the deadline, I took the rest in hand and wrote {{about three quarters of the code|2,598 of about 3,413 lines in the final version, by git blame.}}.
 - Simulation: A* pathfinding for roads and walkers, immigrants who find a plot and settle, prefecture, engineer and well buildings, fire risk and water overlays.
-- Engine: camera and minimap, rendering in layers tuned for frame rate, animations, game speed control. Python. Code: [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
+- Engine, tuned for frame rate: {{map pre-rendered once|The ground is drawn once into one cached image; each frame shows that image at the camera position instead of redrawing every tile. Placing a building redraws only its tile on the cache.}}, only changed tiles redrawn, in 4 draw layers (ground, walkers, buildings, build preview); camera and minimap, animations, game speed control. Python. Code: [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
 
 ## Education
 

@@ -25,7 +25,7 @@ INSA Centre Val de Loire: 5th-year school project, planned for 2-3, done alone
 INSA Centre Val de Loire: school project, team of six
 
 - I split the tasks and gave everyone time to contribute. Three weeks before the deadline, I took the rest in hand and wrote {{about three quarters of the code|2,598 of about 3,413 lines in the final version, by git blame.}}.
-- Simulation: A* pathfinding for roads and walkers, immigrants who find a plot and settle, prefecture, engineer and well buildings, fire risk and water overlays.
+- {{Core engine of the main game|The game scene's per-frame update, drawing and input, plus the world, camera and buildings. The menus and the switching between screens were a teammate's.}}: the in-game event system (calendar, game speed, fire risk and burning, housing, walkers, prefect patrols, water, house evolution), A* pathfinding for roads and walkers, immigrants who find a plot and settle, prefecture, engineer and well buildings, fire risk and water overlays.
 - Engine, tuned for frame rate: {{map pre-rendered once|The ground is drawn once into one cached image; each frame shows that image at the camera position instead of redrawing every tile. Placing a building redraws only its tile on the cache.}}, only changed tiles redrawn, in 4 draw layers (ground, walkers, buildings, build preview); camera and minimap, animations, game speed control. Python. Code: [github.com/jumscrafteur/appius](https://github.com/jumscrafteur/appius/tree/legacy)
 
 ## Education

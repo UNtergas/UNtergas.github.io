@@ -27,12 +27,14 @@
     {
       "label": "CV English (PDF)",
       "file": "cv-en.pdf",
+      "saveAs": "Nguyen-Anh-Tuan_CV_Full-Stack-Engineer.pdf",
       "tip": "The printable one-pager.",
       "tipFr": "La version anglaise, à imprimer."
     },
     {
       "label": "CV Français (PDF)",
       "file": "cv-fr.pdf",
+      "saveAs": "Nguyen-Anh-Tuan_CV_Ingenieur-Full-Stack.pdf",
       "tip": "La version française."
     }
   ],

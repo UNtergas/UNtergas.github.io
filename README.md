@@ -176,7 +176,7 @@ Tips can hold small ASCII charts, which read well in the monospace status line:
     { "text": "me@example.com", "href": "mailto:me@example.com" }
   ],
   "downloads": [
-    { "label": "CV English (PDF)", "file": "cv-en.pdf", "tip": "The printable one-pager." }
+    { "label": "CV English (PDF)", "file": "cv-en.pdf", "saveAs": "Nguyen-Anh-Tuan_CV_Full-Stack-Engineer.pdf", "tip": "The printable one-pager." }
   ],
   "man": ["TUAN(1)", "Curriculum Vitae"],
   "uptime": { "since": "2025-02", "until": "", "label": "snowpack" },

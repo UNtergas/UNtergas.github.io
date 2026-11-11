@@ -58,7 +58,7 @@ The status line is a small shell. Tab completes, ↑/↓ walk the history, Esc l
 | `cd ..`, `cd ~`, `cd` | back to the whole page, laid flat (so does `0`) |
 | `cat <file>` | read one item: the sheet zooms onto it and the status line prints it (`cat full-stack-engineer` inside experience, `cat ~/skills/backend`, `cat ../projects/appius`, `cat about/profile.txt`); on a section: `Is a directory` |
 | `grep <word>` | same as `/` search |
-| `open <file.pdf>` | download a PDF (sections are directories: `open about` says to use `cd about`) |
+| `open <file.pdf>` | open a PDF in a new tab (sections are directories: `open about` says to use `cd about`) |
 | `man tuan` | back to the front page |
 | `flip`, `lang en\|fr`, `contact`, `print`, `uptime`, `clear` | what they say |
 | `sudo hire tuan` | try it |
@@ -176,7 +176,7 @@ Tips can hold small ASCII charts, which read well in the monospace status line:
     { "text": "me@example.com", "href": "mailto:me@example.com" }
   ],
   "downloads": [
-    { "label": "CV English (PDF)", "file": "cv-en.pdf", "saveAs": "Nguyen-Anh-Tuan_CV_Full-Stack-Engineer.pdf", "tip": "The printable one-pager." }
+    { "label": "CV English (PDF)", "file": "cv-en.pdf", "tip": "The printable one-pager." }
   ],
   "man": ["TUAN(1)", "Curriculum Vitae"],
   "uptime": { "since": "2025-02", "until": "", "label": "snowpack" },

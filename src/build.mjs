@@ -182,7 +182,7 @@ function build(){
     ? readFileSync(join(CONTENT, site.portrait), 'utf8').replace(/\s+$/, '') : '';
   if (site.portrait && !avatar) console.warn(`! missing content/${site.portrait} — portrait not rendered`);
 
-  /* download buttons point at PDFs living in content/, never at the 3D page */
+  /* PDF buttons open the PDF in the browser's viewer (new tab, no download attribute); files live in content/ */
   const downloads = (site.downloads || []).filter(d => {
     const there = existsSync(join(CONTENT, d.file));
     if (!there) console.warn(`! missing content/${d.file} — "${d.label}" button not rendered`);
@@ -190,7 +190,7 @@ function build(){
   });
   /* ?v=<content hash>: a new PDF gets a new URL, so browsers skip their cached copy */
   const buttons = downloads.map(d =>
-    `  <a class="btn download" href="${esc(d.file)}?v=${createHash('sha1').update(readFileSync(join(CONTENT, d.file))).digest('hex').slice(0, 8)}" target="_blank" rel="noopener"${d.saveAs ? ` download="${esc(d.saveAs)}"` : ''}${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}${d.tipFr ? ` data-tip-fr="${esc(d.tipFr)}"` : ''}>${esc(d.label)}</a>`
+    `  <a class="btn download" href="${esc(d.file)}?v=${createHash('sha1').update(readFileSync(join(CONTENT, d.file))).digest('hex').slice(0, 8)}" target="_blank" rel="noopener"${d.tip ? ` data-tip="${esc(d.tip)}"` : ''}${d.tipFr ? ` data-tip-fr="${esc(d.tipFr)}"` : ''}>${esc(d.label)}</a>`
   ).join('\n');
 
   const html = readFileSync(join(SRC, 'template.html'), 'utf8')

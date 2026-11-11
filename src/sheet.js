@@ -250,7 +250,7 @@
       'drag to turn · scroll or pinch to zoom · [f] flip',
       'hover a dotted word or a number for details',
       '[/] searches the sheet, like in man',
-      '[c] to write to me · ↓ to download the CV',
+      '[c] to write to me · ↗ to view the CV',
     ],
     fr: [
       'glisser pour tourner · molette ou pincer pour zoomer · [f] retourner',
@@ -704,7 +704,7 @@
               'cat full-stack-engineer   (inside experience) one job, its highlights\ncat skills/backend        one row of skills\ncat about/profile.txt     the profile paragraph\nUse ls to see the file names. Tab completes them.'],
     grep:    ['grep <word>',   'find a word on the CV',
               'grep node       highlights every match and jumps to the first\nThen n / N (or the next / prev buttons) step through them; esc clears.\nSame as pressing /.'],
-    open:    ['open <pdf>',    'download the CV as a PDF',
+    open:    ['open <pdf>',    'open the CV (PDF) in a new tab',
               'open cv-en.pdf  English\nopen cv-fr.pdf  French'],
     man:     ['man tuan',      'back to the first page', 'man tuan        the front page, laid flat'],
     lang:    ['lang en|fr',    'switch language', 'lang fr         the CV in French (the l key does it too)\nlang en         back to English'],

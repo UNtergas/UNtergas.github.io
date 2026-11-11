@@ -153,7 +153,7 @@ a.link:hover,a.link:focus-visible{background:var(--ink);color:var(--paper);text-
 }
 .btn kbd{font-family:inherit;background:#fff;color:#000;padding:0 .35em;margin-right:.5em}
 .btn kbd + kbd{margin-left:-.3em}
-.btn.download::before{content:"↓ ";color:#888}
+.btn.download::before{content:"↗ ";color:#888}
 .btn:hover,.btn:focus-visible{background:#fff;color:#000;outline:none}
 .btn:hover kbd,.btn:focus-visible kbd{background:#000;color:#fff}
 /* while a search has matches, the key bar becomes prev / next / clear (phones have no n, N, esc) */

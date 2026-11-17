@@ -9,7 +9,7 @@ sign: Tournez la page : projets et compétences.
 
 ## Profil {text #about}
 
-Ingénieur en informatique et sécurité. Depuis 2025, développeur full-stack TypeScript/Node.js sur la console centrale d'une plateforme {{ZTNA|Zero-trust network access : chaque requête est authentifiée et autorisée, rien n'est considéré fiable parce qu'il est dans le réseau.}} en SaaS, le système dont dépendent nos applications et notre réseau. Deux développeurs, pas de lead technique, en lien direct avec le CTO : je porte mes sujets de la spécification à la production, seul. Je m'attaque aussi aux problèmes que personne n'a assignés : j'ai trouvé pourquoi notre backend démarrait lentement, présenté le dossier au CTO, puis fait la migration Node.js.
+Ingénieur en informatique et sécurité, jeune diplômé de l'INSA Centre Val de Loire (2026). Depuis 2025, développeur full-stack TypeScript/Node.js sur la console centrale d'une plateforme {{ZTNA|Zero-trust network access : chaque requête est authentifiée et autorisée, rien n'est considéré fiable parce qu'il est dans le réseau.}} en SaaS, le système dont dépendent nos applications et notre réseau. Deux développeurs, pas de lead technique, en lien direct avec le CTO : je porte mes sujets de la spécification à la production, seul. Je m'attaque aussi aux problèmes que personne n'a assignés : j'ai trouvé pourquoi notre backend démarrait lentement, présenté le dossier au CTO, puis fait la migration Node.js.
 
 ## Expérience {#experience}
 

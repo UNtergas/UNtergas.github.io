@@ -6,6 +6,13 @@ sign: Press P to print this sheet.
 
 ## Projects
 
+### wise-code, Claude Code plugin | 10/2026 - present
+Independent project, a fork of VibeWise
+
+- Makes Claude Code teach instead of type: three {{assist levels|Hint: direction only. Pseudo: pseudocode and concepts. Full code: the agreed implementation. At Hint and Pseudo, Claude never edits your files; it reviews your changes and runs the checks.}}, you keep the design.
+- My additions: lessons and quizzes, plan grilling, research with {{quotes checked by code|Every cited quote is fetched and checked against the live page before the report goes out.}}, a Codex reviewer side.
+- 14 skills, a session hook, a Python CLI with tests, 50 merged PRs. Code: [github.com/UNtergas/wise-code](https://github.com/UNtergas/wise-code)
+
 ### RFP proposal scorer | 09/2026
 24-hour hackathon, Frankfurt: architecture lead, team of four
 
@@ -17,9 +24,8 @@ sign: Press P to print this sheet.
 ### Apprenticeship diary | 12/2024 - 02/2025
 INSA Centre Val de Loire: 5th-year school project, planned for 2-3, done alone
 
-- A web app to follow an apprenticeship, with three roles: the company assigns missions, the apprentice logs activities and rates their own skills (with a chart), the INSA tutor evaluates them, and both give feedback.
-- NestJS backend: sign-in with a JWT in a cookie, {{guards|Custom decorators and Nest guards check the user's role before an endpoint runs.}} that restrict endpoints by role, Prisma and PostgreSQL. Next.js frontend, with a middleware that blocks pages above the user's role.
-- pnpm monorepo with a shared models package, Docker and an Nginx reverse proxy.
+- A web app to follow an apprenticeship, with three roles: the company assigns missions, the apprentice logs activities and rates their skills, the INSA tutor evaluates them.
+- NestJS backend with a JWT cookie and role {{guards|Custom decorators and Nest guards check the user's role before an endpoint runs; a Next.js middleware blocks pages above the user's role.}}, Prisma, PostgreSQL; Next.js frontend; pnpm monorepo, Docker, Nginx.
 
 ### Appius, city-builder game | 10/2022 - 01/2023
 INSA Centre Val de Loire: school project, team of six
@@ -45,7 +51,7 @@ INSA Centre Val de Loire
 - Testing: Vitest (TDD, end-to-end), k6 load testing
 - Build: Docker, GitLab CI, ESM, swc, esbuild, Node SEA, Grafana
 - System: Linux (daily driver: niri, Hyprland), Bash, Git
-- AI: Claude Code (code from my specs, reviewed by diff)
+- AI: Claude Code (plugin author: skills, hooks), Codex; code from my specs, reviewed by diff
 - Spoken: English C1 (TOEIC 970/990), French B2 (DELF B2, 72.5/100), Vietnamese native
 
 ## Interest {grid}

@@ -6,6 +6,13 @@ sign: Appuyez sur P pour imprimer cette feuille.
 
 ## Projets {#projects}
 
+### wise-code, plugin Claude Code | 10/2026 - aujourd'hui
+Projet indépendant, fork de VibeWise
+
+- Fait enseigner Claude Code au lieu de coder à votre place : trois {{niveaux d'assistance|Indice : la direction seulement. Pseudo : pseudocode et concepts. Code complet : l'implémentation convenue. En Indice et Pseudo, Claude ne modifie jamais vos fichiers ; il relit vos changements et lance les vérifications.}}, vous gardez la conception.
+- Mes ajouts : leçons et quiz, mise à l'épreuve des plans, recherche avec {{citations vérifiées par le code|Chaque citation est récupérée et comparée à la page en ligne avant que le rapport ne parte.}}, un volet relecteur pour Codex.
+- 14 skills, un hook de session, une CLI Python testée, 50 PR fusionnées. Code : [github.com/UNtergas/wise-code](https://github.com/UNtergas/wise-code)
+
 ### Évaluateur de propositions (RFP) | 09/2026
 Hackathon 24 h, Francfort : responsable architecture, équipe de quatre
 
@@ -17,9 +24,8 @@ Hackathon 24 h, Francfort : responsable architecture, équipe de quatre
 ### Journal d'apprentissage | 12/2024 - 02/2025
 INSA Centre Val de Loire : projet de 5e année, prévu pour 2-3, fait seul
 
-- Une application web pour suivre un apprentissage, avec trois rôles : l'entreprise assigne des missions, l'apprenti note ses activités et évalue ses compétences (avec un graphique), le tuteur INSA l'évalue, et les deux donnent leur avis.
-- Backend NestJS : connexion par JWT en cookie, {{guards|Décorateurs personnalisés et guards Nest qui vérifient le rôle de l'utilisateur avant l'exécution d'un endpoint.}} qui restreignent les endpoints par rôle, Prisma et PostgreSQL. Frontend Next.js, avec un middleware qui bloque les pages au-dessus du rôle de l'utilisateur.
-- Monorepo pnpm avec un paquet de modèles partagé, Docker et un reverse proxy Nginx.
+- Une application web pour suivre un apprentissage, avec trois rôles : l'entreprise assigne des missions, l'apprenti note ses activités et évalue ses compétences, le tuteur INSA l'évalue.
+- Backend NestJS avec JWT en cookie et {{guards|Décorateurs et guards Nest qui vérifient le rôle avant l'exécution d'un endpoint ; un middleware Next.js bloque les pages au-dessus du rôle.}} par rôle, Prisma, PostgreSQL ; frontend Next.js ; monorepo pnpm, Docker, Nginx.
 
 ### Appius, jeu de city-builder | 10/2022 - 01/2023
 INSA Centre Val de Loire : projet d'école, équipe de six
@@ -45,7 +51,7 @@ INSA Centre Val de Loire
 - Tests: Vitest (TDD, end-to-end), tests de charge k6
 - Build: Docker, GitLab CI, ESM, swc, esbuild, Node SEA, Grafana
 - Système: Linux (au quotidien : niri, Hyprland), Bash, Git
-- IA: Claude Code (code à partir de mes specs, relu au diff)
+- IA: Claude Code (auteur de plugin : skills, hooks), Codex ; code à partir de mes specs, relu au diff
 - Langues: anglais C1 (TOEIC 970/990), français B2 (DELF B2, 72,5/100), vietnamien langue maternelle
 
 ## Intérêts {grid #interest}
